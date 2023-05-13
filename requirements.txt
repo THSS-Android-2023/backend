@@ -1,1 +1,6 @@
 flask
+flask-login
+flask-sock
+pytest
+flask-cors
+pytest-cov
