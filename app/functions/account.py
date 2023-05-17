@@ -1,10 +1,13 @@
 import jwt
+import datetime
+
 from flask import Blueprint, request, jsonify
 from functools import wraps
 from flasgger import swag_from
-import datetime
+from werkzeug.utils import secure_filename
 
 from app.functions.database import db_add_new_user, db_change_user_info, db_get_user_info, db_verify_user, db_change_user_password, db_follow_user, db_unfollow_user
+
 
 account_bp = Blueprint("account", __name__)
 
@@ -136,6 +139,30 @@ def api_change_info():
     if status:
         return 'success', 200
     return 'failed', 500
+
+
+@account_bp.route('/change_avatar/', methods=['POST'])
+@swag_from('swagger/changeAvatar.yml')
+@login_required
+def api_change_avatar():
+    if 'file' not in request.files:
+        return 'No file part', 400
+    file = request.files['file']
+    if file.filename == '':
+        return 'No selected file', 400
+    filename = secure_filename(file.filename)
+    if filename.split('.')[-1] not in ['jpg', 'png', 'jpeg', 'gif', 'bmp']:
+        return 'unsupport file type', 400
+
+    username = identify(request.headers.get("Authorization", default=None))
+    filename = username + filename.split('.')[-1]
+    
+    directory = '~/djk/backend/app/static/'
+    directory = os.path.expanduser(directory)
+    os.makedirs(directory, exist_ok=True)
+    filepath = os.path.join(directory, filename)
+    file.save(filepath)
+    return 'http://129.211.216.10:5001/static/' + filename, 201
 
 
 @account_bp.route('/get_info/', methods=['GET'])

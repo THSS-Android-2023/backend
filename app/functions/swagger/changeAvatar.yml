@@ -1,0 +1,10 @@
+description: 上传头像API
+parameters:
+  - in: formData
+    name: file
+    type: file
+    required: true
+    description: 头像文件，支持jpg, png, jpeg, gif, bmp。
+responses:
+  201:
+    description: 上传成功

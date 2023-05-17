@@ -5,7 +5,7 @@ from app.extensions.extensions import db
 # 添加新的用户
 def db_add_new_user(username, password):
     try:
-        user = Users(username=username, password=password, intro='', avatar='', nickname=username)
+        user = Users(username=username, password=password, intro='', avatar='http://129.211.216.10:5001/static/default.png', nickname=username)
         db.session.add(user)
         db.session.commit()
         return True
