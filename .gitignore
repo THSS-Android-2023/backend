@@ -5,3 +5,4 @@ __pycache__
 .idea
 cov.xml
 .pytest_cache
+static/

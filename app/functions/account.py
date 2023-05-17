@@ -122,11 +122,20 @@ def create_new_account():
 @login_required
 def api_change_info():
     body_json = request.json
-    username = identify(request.headers.get("Authorization", default=None))
-    status, message = db_change_user_info(username, body_json["intro"])
+    username = identify(request.headers.get("Authorization", default=None))    
+    body_data = request.json
+    if 'intro' in body_data and body_data['intro'] != '':
+        intro = body_data['intro']
+    else:
+        intro = None
+    if 'nickname' in body_data and body_data['nickname'] != '':
+        nickname = body_data['nickname']
+    else:
+        nickname = None
+    status = db_change_user_info(username, intro, nickname)
     if status:
         return 'success', 200
-    return message, 500
+    return 'failed', 500
 
 
 @account_bp.route('/get_info/', methods=['GET'])

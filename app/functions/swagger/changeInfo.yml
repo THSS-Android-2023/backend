@@ -3,8 +3,13 @@ parameters:
   - name: intro
     in: body
     type: string
-    required: true
+    required: False
     example: '爷就是坠吊滴！'
+  - name: nickname
+    in: body
+    type: string
+    required: False
+    example: '素月分辉'
 responses:
   200:
     description: 成功

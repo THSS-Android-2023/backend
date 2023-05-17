@@ -1,6 +1,6 @@
 description: 获取当前登录用户个人简介及头像URL
 responses:
   200:
-    description: ，并返回一个json，格式为{'intro':..., 'avatar':...}
+    description: ，并返回一个json，格式为{'intro':..., 'avatar':..., 'nickname':...}
   401:
     description: 当前处于未登录状态

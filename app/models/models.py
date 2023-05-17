@@ -11,6 +11,7 @@ class Users(db.Model):
     password = db.Column(db.String(256), doc="密码")
     intro = db.Column(db.String(500), doc="个性签名")
     avatar = db.Column(db.String(400000), doc="头像")
+    nickname = db.Column(db.String(32), doc="昵称")
     
     # email = db.Column(db.String(50), doc="邮箱")
     # mobile = db.Column(db.String(20), doc="手机号")
