@@ -6,7 +6,7 @@ import datetime
 
 from app.functions.database import db_add_new_user, db_change_user_info, db_get_user_info, db_verify_user, db_change_user_password, db_follow_user, db_unfollow_user
 
-account_bp = Blueprint("login", __name__)
+account_bp = Blueprint("account", __name__)
 
 key = "123456"
 
@@ -118,17 +118,19 @@ def create_new_account():
 
 
 @account_bp.route('/change_info/', methods=['POST'])
+@swag_from('swagger/changeInfo.yml')
 @login_required
 def api_change_info():
     body_json = request.json
     username = identify(request.headers.get("Authorization", default=None))
-    status, message = db_change_user_info(body_json["username"], body_json["intro"], body_json["avatar"])
+    status, message = db_change_user_info(username, body_json["intro"])
     if status:
         return 'success', 200
     return message, 500
 
 
 @account_bp.route('/get_info/', methods=['GET'])
+@swag_from('swagger/getInfo.yml')
 @login_required
 def api_get_user_info():
     status, res = db_get_user_info(identify(request.headers.get("Authorization", default=None)))
@@ -152,20 +154,22 @@ def api_change_password():
 
 
 @account_bp.route('/follow_user/', methods=['POST'])
+@swag_from('swagger/followUser.yml')
 @login_required
 def api_follow_user():
     body_json = request.json
-    status, message = db_follow_user(body_json['username'], body_json['target_username'])
+    status, message = db_follow_user(identify(request.headers.get("Authorization", default=None)), body_json['target_username'])
     if status:
         return 'success', 200
     return message, 500
 
 
 @account_bp.route('/unfollow_user/', methods=['POST'])
+@swag_from('swagger/unfollowUser.yml')
 @login_required
 def api_unfollow_user():
     body_json = request.json
-    status, message = db_unfollow_user(body_json['username'], str(body_json['target_username']))
+    status, message = db_unfollow_user(identify(request.headers.get("Authorization", default=None)), str(body_json['target_username']))
     if status:
         return 'success', 200
     return message, 500

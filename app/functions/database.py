@@ -15,9 +15,9 @@ def db_add_new_user(username, password):
 
 
 # 修改用户信息
-def db_change_user_info(username, intro, avatar):
+def db_change_user_info(username, intro):
     try:
-        db.session.execute("UPDATE users SET intro = '{}', avatar = '{}' WHERE username = '{}';".format(intro, avatar, username))
+        db.session.execute("UPDATE users SET intro = '{}', WHERE username = '{}';".format(intro, username))
         db.session.commit()
         return True
     except Exception as e:

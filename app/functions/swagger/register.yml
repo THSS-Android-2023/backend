@@ -1,0 +1,17 @@
+description: 注册新用户
+parameters:
+  - name: username
+    in: body
+    type: string
+    required: true
+    example: 'Li Hua'
+  - name: password
+    in: body
+    type: string
+    required: true
+    example: 'woshilihua'
+responses:
+  201:
+    description: 成功
+  500:
+    description: 注册失败

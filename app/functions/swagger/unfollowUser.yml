@@ -1,0 +1,14 @@
+description: 取消关注一名用户
+parameters:
+  - name: target_username
+    in: body
+    type: string
+    required: true
+    example: 'xuhb20'
+responses:
+  200:
+    description: 成功
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: 修改失败

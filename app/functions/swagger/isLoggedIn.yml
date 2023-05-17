@@ -1,0 +1,6 @@
+description: 查看当前登录状态
+responses:
+  200:
+    description: 当前处于登录状态，并返回当前登录的username
+  401:
+    description: 当前处于未登录状态
