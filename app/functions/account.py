@@ -1,0 +1,177 @@
+import jwt
+from flask import Blueprint, request, jsonify
+from functools import wraps
+from flasgger import swag_from
+import datetime
+
+from app.functions.database import db_add_new_user, db_change_user_info, db_get_user_info, db_verify_user, db_change_user_password, db_follow_user, db_unfollow_user
+
+account_bp = Blueprint("login", __name__)
+
+key = "123456"
+
+
+def generate_access_token(username: str = "", algorithm: str = 'HS256', exp: float = 200000):
+    """
+    生成access_token
+    :param username: 用户名(自定义部分)
+    :param algorithm: 加密算法
+    :param exp: 过期时间
+    :return:token
+    """
+
+    now = datetime.datetime.utcnow()
+    exp_datetime = now + datetime.timedelta(hours=exp)
+    access_payload = {
+        'exp': exp_datetime,
+        'flag': 0,   # 标识是否为一次性token，0是，1不是
+        'iat': now,   # 开始时间
+        'iss': 'leon',   # 签名
+        'username': username   # 用户名(自定义部分)
+    }
+    access_token = jwt.encode(access_payload, key, algorithm=algorithm)
+    return access_token.decode()
+
+
+def decode_auth_token(token: str):
+    """
+    解密token
+    :param token:token字符串
+    :return:
+    """
+    try:
+        payload = jwt.decode(token, key=key, algorithms='HS256')
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, jwt.InvalidSignatureError):
+        return ""
+    else:
+        return payload
+
+
+def identify(auth_header: str):
+    """
+    用户鉴权
+    """
+    if auth_header:
+        payload = decode_auth_token(auth_header)
+        if not payload:
+            return False
+        if "username" in payload and "flag" in payload:
+            if payload["flag"] == 0:
+                return payload["username"]
+            else:
+                return False
+    return False
+
+
+def login_required(f):
+    """
+    登录保护，验证用户是否登录
+    :param f:
+    :return:
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Authorization", default=None)
+        if not token:
+            return 'not Login', 401
+        username = identify(token)
+        if not username:
+            return 'not Login', 401      # return 响应体, 状态码, 响应头
+        return f(*args, **kwargs)
+    return wrapper
+
+
+@account_bp.route('/is_logged_in/', methods=['GET'])
+@swag_from('swagger/isLoggedIn.yml')
+@login_required
+def is_logged_in():
+    return identify(request.headers.get("Authorization", default=None)), 200  # 成功通过login_required认证则返回username
+
+
+@account_bp.route("/", methods=['POST'])
+@swag_from('swagger/login.yml')
+def login():
+    # 登录，成功则返回200，否则返回401
+    body_data = request.json
+    username = body_data['username']
+    password = body_data['password']
+    if db_verify_user(username, password):
+        return jsonify({'jwt': generate_access_token(username)}), 200
+    return 'failed', 401
+
+
+@account_bp.route("/register/", methods=['POST'])
+@swag_from('swagger/register.yml')
+def create_new_account():
+    # 注册新的账号，成功则返回 'success' 及201，否则打印错误信息到后端控制台并返回给前端
+    body_data = request.json
+    username = body_data['username']
+    password = body_data['password']
+    # email = body_data['email']
+    # verify_code = body_data['verify_code']
+    # status, message = db_check_verify_code(verify_code, email)
+    # if status is False:
+    #    return message, 500
+    if db_add_new_user(username, password):
+        return 'success', 201
+    return 'duplicate username', 400
+
+
+@account_bp.route('/change_info/', methods=['POST'])
+@login_required
+def api_change_info():
+    body_json = request.json
+    username = identify(request.headers.get("Authorization", default=None))
+    status, message = db_change_user_info(body_json["username"], body_json["intro"], body_json["avatar"])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@account_bp.route('/get_info/', methods=['GET'])
+@login_required
+def api_get_user_info():
+    status, res = db_get_user_info(identify(request.headers.get("Authorization", default=None)))
+    if status:
+        return jsonify(res), 200
+    return res, 500
+
+
+@account_bp.route("/change_password/", methods=['POST'])
+@swag_from('swagger/changePassword.yml')
+def api_change_password():
+    # 修改密码，成功则返回 'success' 及201，否则打印错误信息到后端控制台并返回给前端
+    body_json = request.json
+    username = body_data['username']
+    password = body_data['old_password']
+    if db_verify_user(username, password):
+        if db_change_user_password(username, body_json['new_password']):
+            return 'success', 200
+        return '服务器错误', 500
+    return 'verify failed', 401
+
+
+@account_bp.route('/follow_user/', methods=['POST'])
+@login_required
+def api_follow_user():
+    body_json = request.json
+    status, message = db_follow_user(body_json['username'], body_json['target_username'])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@account_bp.route('/unfollow_user/', methods=['POST'])
+@login_required
+def api_unfollow_user():
+    body_json = request.json
+    status, message = db_unfollow_user(body_json['username'], str(body_json['target_username']))
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+
+
+
+
