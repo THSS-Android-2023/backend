@@ -1,5 +1,5 @@
-from .database import db_insertuser, db_verify_pw, db_deleteuser, db_selectUserByName
-from flask import Blueprint, session, request, abort
+from .database import db_insertuser, db_verify_pw, db_deleteuser, db_selectUserByName, db_change_user_info, db_change_password, db_get_user_info, db_star_user, db_unstar_user
+from flask import Blueprint, session, request, abort, jsonify
 from functools import wraps
 
 login_bp = Blueprint("login", __name__)
@@ -52,3 +52,54 @@ def register():
             return 'failed to deregister', 500
         else:
             return 'suceess', 200
+
+
+@login_bp.route('/change_info/', methods=['POST'])
+# @login_required
+def api_change_info():
+    body_json = request.json
+    print(body_json["username"], body_json["intro"], body_json["avatar"])
+    status, message = db_change_user_info(body_json["username"], body_json["intro"], body_json["avatar"])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@login_bp.route('/get_info/', methods=['GET'])
+@login_required
+def api_get_user_info():
+    status, res = db_get_user_info(request.json['username'])
+    if status:
+        return jsonify({'intro': res[0], 'avatar': res[1], 'star_user_list': res[2]}), 200
+    return res, 500
+
+
+@login_bp.route('/change_password/', methods=['POST'])
+def api_change_password():
+    body_json = request.json
+    status, message = db_change_password(body_json["username"], body_json["old_password"], body_json["new_password"])
+    if status:
+        return 'success', 200
+    if message == "verify failed":
+        return message, 400
+    return message, 500
+
+
+@login_bp.route('/star_user/', methods=['POST'])
+@login_required
+def api_star_user():
+    body_json = request.json
+    status, message = db_star_user(body_json['username'], body_json['target_username'])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@login_bp.route('/unstar_user/', methods=['POST'])
+@login_required
+def api_unstar_user():
+    body_json = request.json
+    status, message = db_unstar_user(body_json['username'], str(body_json['target_username']))
+    if status:
+        return 'success', 200
+    return message, 500
