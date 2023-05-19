@@ -1,6 +1,6 @@
 description: 获取当前登录用户个人简介、头像URL、昵称、关注数与被关注数
 responses:
   200:
-    description: ，并返回一个json，格式为{'intro':..., 'avatar':..., 'nickname':..., 'followers_num':..., "followings_num":...}
+    description: 成功，并返回一个json，格式为{'intro':..., 'avatar':..., 'nickname':..., 'followers_num':..., "followings_num":...}
   401:
     description: 当前处于未登录状态

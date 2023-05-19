@@ -1,0 +1,6 @@
+description: 获取当前登录用户所有粉丝的username及信息
+responses:
+  200:
+    description: 成功，并返回一个list，每一项是一个json，格式为{'username':..., 'intro':..., 'avatar':..., 'nickname':..., 'is_following':True or False}
+  401:
+    description: 当前处于未登录状态

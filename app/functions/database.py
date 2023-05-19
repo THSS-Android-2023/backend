@@ -5,7 +5,7 @@ from app.extensions.extensions import db
 # 添加新的用户
 def db_add_new_user(username, password):
     try:
-        user = Users(username=username, password=password, intro='', avatar='http://129.211.216.10:5001/static/default.png', nickname=username, blacklist="")
+        user = Users(username=username, password=password, intro='', avatar='http://129.211.216.10:5001/static/default.png', nickname=username)
         db.session.add(user)
         db.session.commit()
         return True
@@ -115,12 +115,14 @@ def db_get_followers(username):
                 ;""")
         results = cursor.fetchall()
         followers_list = []
+        followings_list = db_get_followings(username)
         for result in results:
             followers_list.append({
                 'username': result[0],
                 'intro': result[1],
                 'avatar': result[2],
-                'nickname': result[3]
+                'nickname': result[3],
+                "is_following": result[0] in followings_list
             })
         return True, followers_list
     except Exception as e:

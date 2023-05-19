@@ -229,25 +229,19 @@ def api_unfollow_user():
 
 
 @account_bp.route('/get_following/', methods=['GET'])
-# @swag_from('swagger/unfollowUser.yml')
+@swag_from('swagger/getFollowing.yml')
 @login_required
 def api_get_following():
-    body_json = request.json
     status, message = db_get_followings(identify(request.headers.get("Authorization", default=None)))
     if status:
         return jsonify(message), 200
     return "failed", 500
 
 @account_bp.route('/get_follower/', methods=['GET'])
-# @swag_from('swagger/unfollowUser.yml')
-# TODO: 确认是否已关注
+@swag_from('swagger/getFollower.yml')
 @login_required
 def api_get_follower():
-    body_json = request.json
     status, message = db_get_followers(identify(request.headers.get("Authorization", default=None)))
     if status:
         return jsonify(message), 200
     return "failed", 500
-
-
-

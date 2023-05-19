@@ -12,7 +12,6 @@ class Users(db.Model):
     intro = db.Column(db.String(500), doc="个性签名")
     avatar = db.Column(db.String(100), doc="头像")
     nickname = db.Column(db.String(32), doc="昵称")
-    blacklist = db.Column(db.String(100000), doc="拉黑用户username列表，格式：'user_1 user_2 ... user_k'")
     
     # email = db.Column(db.String(50), doc="邮箱")
     # mobile = db.Column(db.String(20), doc="手机号")
