@@ -1,0 +1,12 @@
+description: 获取某用户个人简介、头像URL、昵称、关注数与被关注数，以及是否被当前用户拉黑
+parameters:
+  - name: username
+    in: url
+    type: string
+    required: true
+    example: 'xuhb20'
+responses:
+  200:
+    description: ，并返回一个json，格式为{'intro':..., 'avatar':..., 'nickname':..., 'followers_num':..., "followings_num":..., "is_blacked":True or False}
+  401:
+    description: 当前处于未登录状态

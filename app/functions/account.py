@@ -1,12 +1,13 @@
 import jwt
 import datetime
+import os
 
 from flask import Blueprint, request, jsonify
 from functools import wraps
 from flasgger import swag_from
 from werkzeug.utils import secure_filename
 
-from app.functions.database import db_add_new_user, db_change_user_info, db_get_user_info, db_verify_user, db_change_user_password, db_follow_user, db_unfollow_user
+from app.functions.database import *
 
 
 account_bp = Blueprint("account", __name__)
@@ -155,14 +156,16 @@ def api_change_avatar():
         return 'unsupport file type', 400
 
     username = identify(request.headers.get("Authorization", default=None))
-    filename = username + filename.split('.')[-1]
+    filename = username + '.'+ filename.split('.')[-1]
     
     directory = '~/djk/backend/app/static/'
     directory = os.path.expanduser(directory)
     os.makedirs(directory, exist_ok=True)
     filepath = os.path.join(directory, filename)
     file.save(filepath)
-    return 'http://129.211.216.10:5001/static/' + filename, 201
+    url = 'http://129.211.216.10:5001/static/' + filename
+    db_change_user_avatar(username, url)
+    return url, 201
 
 
 @account_bp.route('/get_info/', methods=['GET'])
@@ -175,13 +178,27 @@ def api_get_user_info():
     return res, 500
 
 
+@account_bp.route('/get_info/<username>/', methods=['GET'])
+@swag_from('swagger/getOthersInfo.yml')
+@login_required
+def api_get_other_user_info(username):
+    status, res = db_get_user_info(username)
+    if status:
+        status, res_2 = db_get_user_blacklist(identify(request.headers.get("Authorization", default=None)))
+        if status:
+            res['is_blacked'] = username in res_2
+            return jsonify(res), 200
+        return res_2, 500
+    return res, 500
+
+
 @account_bp.route("/change_password/", methods=['POST'])
 @swag_from('swagger/changePassword.yml')
 def api_change_password():
     # 修改密码，成功则返回 'success' 及201，否则打印错误信息到后端控制台并返回给前端
     body_json = request.json
-    username = body_data['username']
-    password = body_data['old_password']
+    username = body_json['username']
+    password = body_json['old_password']
     if db_verify_user(username, password):
         if db_change_user_password(username, body_json['new_password']):
             return 'success', 200
@@ -211,7 +228,26 @@ def api_unfollow_user():
     return message, 500
 
 
+@account_bp.route('/get_following/', methods=['GET'])
+# @swag_from('swagger/unfollowUser.yml')
+@login_required
+def api_get_following():
+    body_json = request.json
+    status, message = db_get_followings(identify(request.headers.get("Authorization", default=None)))
+    if status:
+        return jsonify(message), 200
+    return "failed", 500
 
+@account_bp.route('/get_follower/', methods=['GET'])
+# @swag_from('swagger/unfollowUser.yml')
+# TODO: 确认是否已关注
+@login_required
+def api_get_follower():
+    body_json = request.json
+    status, message = db_get_followers(identify(request.headers.get("Authorization", default=None)))
+    if status:
+        return jsonify(message), 200
+    return "failed", 500
 
 
 
