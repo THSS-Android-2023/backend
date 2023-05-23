@@ -125,7 +125,6 @@ def create_new_account():
 @swag_from('swagger/changeInfo.yml')
 @login_required
 def api_change_info():
-    body_json = request.json
     username = identify(request.headers.get("Authorization", default=None))    
     body_data = request.json
     if 'intro' in body_data and body_data['intro'] != '':

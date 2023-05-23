@@ -1,0 +1,26 @@
+description: 发布新动态
+parameters:
+  - in: formData
+    name: images
+    type: file[]
+    required: false
+    description: 图片文件，支持jpg, png, jpeg, gif, bmp，该字段留空则表示该动态不包含图片。
+  - name: title
+    in: body
+    type: string
+    required: true
+    example: 'TITLE'
+  - name: content
+    in: body
+    type: string
+    required: true
+    example: 'CONTENT'
+responses:
+  200:
+    description: 成功，并返回帖子id
+  400:
+    description: 不支持的文件
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: server原因发布失败

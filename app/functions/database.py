@@ -1,3 +1,5 @@
+import datetime
+
 from app.models.models import *
 from app.extensions.extensions import db
 
@@ -187,3 +189,16 @@ def db_get_user_blacklist(username):
         return False, str(e)
     
 
+def db_add_new_moment(username, title, content, img_nums):
+    try:
+        create_time = datetime.datetime.now()
+        moment = Moment(username=username, title=title, content=content, img_nums=img_nums, time=create_time)
+        db.session.add(moment)
+        db.session.commit()
+        cursor = db.session.execute(f"SELECT id FROM moment WHERE username = '{username}' AND time = '{create_time}';")
+        for cur in cursor:
+            return True, cur[0]
+        return False, "can not find id of the moment"
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
