@@ -311,4 +311,44 @@ def db_unstar_moment(username, moment_id):
     except Exception as e:
         print(str(e))
         return False, str(e)
-    
+
+
+def db_get_user_like_moment_id_list(username):
+    try:
+        cursor = db.session.execute(f"SELECT moment_id FROM like_and_star WHERE username = '{username}' AND _type = 'True'")
+        like_moment_id_list = [cur[0] for cur in cursor]
+        return True, like_moment_id_list
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_like_moment(username, moment_id):
+    try:
+        status, res = db_get_user_like_moment_id_list(username)
+        if not status:
+            return False, res
+        if moment_id in res:
+            return False, "the moment has been liked by the user"
+        like_and_star = LikeAndStar(moment_id=moment_id, _type=True, username=username)
+        db.session.add(like_and_star)
+        db.session.commit()
+        return True, "success"
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_unlike_moment(username, moment_id):
+    try:
+        status, res = db_get_user_like_moment_id_list(username)
+        if not status:
+            return False, res
+        if moment_id not in res:
+            return False, "the moment has not been liked by the user"
+        db.session.execute(f"DELETE FROM like_and_star WHERE moment_id = '{moment_id}' AND username ='{username}' AND _type = 'True';")
+        db.session.commit()
+        return True, "success"
+    except Exception as e:
+        print(str(e))
+        return False, str(e)

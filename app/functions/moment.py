@@ -102,3 +102,25 @@ def api_get_star_moment(page):
             return res, 500
         moments.append(res)
     return jsonify(moments), 200
+
+
+@moment_bp.route('/like_moment/', methods=['POST'])
+@swag_from('swagger/likeMoment.yml')
+@login_required
+def api_like_moment():
+    body_json = request.json
+    status, message = db_like_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@moment_bp.route('/unlike_moment/', methods=['POST'])
+@swag_from('swagger/unlikeMoment.yml')
+@login_required
+def api_unlike_moment():
+    body_json = request.json
+    status, message = db_unlike_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    if status:
+        return 'success', 200
+    return message, 500

@@ -1,4 +1,4 @@
-description: 取消收藏一条动态
+description: 点赞一条动态
 parameters:
   - name: moment_id
     in: body
@@ -11,4 +11,4 @@ responses:
   401:
     description: 当前处于未登录状态
   500:
-    description: 取消收藏失败，并返回具体失败原因
+    description: 点赞失败，并返回具体失败原因

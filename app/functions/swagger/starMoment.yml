@@ -11,4 +11,4 @@ responses:
   401:
     description: 当前处于未登录状态
   500:
-    description: 修改失败
+    description: 收藏失败，并返回具体失败原因
