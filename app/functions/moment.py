@@ -60,3 +60,45 @@ def api_get_user_moment(username, page):
     if status:
         return jsonify(res), 200
     return res, 500
+
+
+@moment_bp.route('/star_moment/', methods=['POST'])
+@swag_from('swagger/starMoment.yml')
+@login_required
+def api_star_moment():
+    body_json = request.json
+    status, message = db_star_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@moment_bp.route('/unstar_moment/', methods=['POST'])
+@swag_from('swagger/unstarMoment.yml')
+@login_required
+def api_unstar_moment():
+    body_json = request.json
+    status, message = db_unstar_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@moment_bp.route('/get_star_moment/<page>/', methods=['GET'])
+@swag_from('swagger/getStarMoment.yml')
+@login_required
+def api_get_star_moment(page):
+    if int(page) < 0:
+        return 'invalid page', 400
+    username = identify(request.headers.get("Authorization", default=None))
+    status, res = db_get_user_star_moment_id_list(username)
+    if not status:
+        return res, 500
+    target_moment_id_list = res[page * 10 : (page + 1) * 10]
+    moments = []
+    for moment_id in target_moment_id_list:
+        status, res = db_get_moment_by_id(username, moment_id)
+        if not status:
+            return res, 500
+        moments.append(res)
+    return jsonify(moments), 200

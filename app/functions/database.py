@@ -189,7 +189,7 @@ def db_unblack_user(username_1, username_2):
             return False, res
         if username_2 in res:
             return False, "the target user has not been blocked"
-        db.session.execute(f"DELETE FROM followship WHERE username_1 = '{username_1}' and username_2 ='{username_2}';")
+        db.session.execute(f"DELETE FROM followship WHERE username_1 = '{username_1}' AND username_2 ='{username_2}';")
         db.session.commit()
         return True, "success"
     except Exception as e:
@@ -231,7 +231,7 @@ def db_get_user_moment(current_user, target_user, page):
         page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
     """
     try:
-        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC;")
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
         moments = []
         for cur in cursor:
             moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'time': cur[6]}
@@ -245,8 +245,38 @@ def db_get_user_moment(current_user, target_user, page):
             moment['is_current_user_like'] = current_user in like_user_list
             moment['like_nums'] = len(like_user_list)
             moments.append(moment)
-        moments = moments[page * 10 : (page + 1) * 10]
         return True, moments
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_get_user_star_moment_id_list(username):
+    try:
+        cursor = db.session.execute(f"SELECT moment_id FROM like_and_star WHERE username = '{username}' AND _type = 'False'")
+        star_moment_id_list = [cur[0] for cur in cursor]
+        return True, star_moment_id_list
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+    
+
+def db_get_moment_by_id(username, moment_id):
+    try:
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, time FROM moment WHERE id = '{moment_id}';")
+        moment = {}
+        for cur in cursor:
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'time': cur[6]}
+            cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False'")
+            star_user_list = [row[0] for row in cursor_star.fetchall()]
+            moment['is_current_user_star'] = username in star_user_list
+            moment['star_nums'] = len(star_user_list)
+
+            cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'True'")
+            like_user_list = [row[0] for row in cursor_like.fetchall()]
+            moment['is_current_user_like'] = username in like_user_list
+            moment['like_nums'] = len(like_user_list)
+        return True, moment
     except Exception as e:
         print(str(e))
         return False, str(e)
@@ -254,10 +284,31 @@ def db_get_user_moment(current_user, target_user, page):
 
 def db_star_moment(username, moment_id):
     try:
-        followship = Blackship(username_1=username_1, username_2=username_2)
-        db.session.add(followship)
+        status, res = db_get_user_star_moment_id_list(username)
+        if not status:
+            return False, res
+        if moment_id in res:
+            return False, "the moment has been stared by the user"
+        like_and_star = LikeAndStar(moment_id=moment_id, _type=False, username=username)
+        db.session.add(like_and_star)
         db.session.commit()
         return True, "success"
     except Exception as e:
         print(str(e))
         return False, str(e)
+
+
+def db_unstar_moment(username, moment_id):
+    try:
+        status, res = db_get_user_star_moment_id_list(username)
+        if not status:
+            return False, res
+        if moment_id not in res:
+            return False, "the moment has not been stared by the user"
+        db.session.execute(f"DELETE FROM like_and_star WHERE moment_id = '{moment_id}' AND username ='{username}' AND _type = 'False';")
+        db.session.commit()
+        return True, "success"
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+    

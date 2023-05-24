@@ -1,0 +1,14 @@
+description: 取消收藏一条动态
+parameters:
+  - name: moment_id
+    in: body
+    type: integer
+    required: true
+    example: 1
+responses:
+  200:
+    description: 成功
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: 修改失败
