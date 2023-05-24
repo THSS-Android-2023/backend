@@ -88,6 +88,11 @@ def db_get_user_info(username):
 
 def db_follow_user(username_1, username_2):
     try:
+        status, res = db_get_followings(username_1)
+        if not status:
+            return False, res
+        if username_2 in [user['username'] for user in res]:
+            return False, "the target user has been followed"
         followship = Followship(username_1=username_1, username_2=username_2)
         db.session.add(followship)
         db.session.commit()
@@ -99,6 +104,11 @@ def db_follow_user(username_1, username_2):
 
 def db_unfollow_user(username_1, username_2):
     try:
+        status, res = db_get_followings(username_1)
+        if not status:
+            return False, res
+        if username_2 not in [user['username'] for user in res]:
+            return False, "the target user has not been followed"
         db.session.execute(f"DELETE FROM followship WHERE username_1 = '{username_1}' and username_2 ='{username_2}';")
         db.session.commit()
         return True, "success"
@@ -158,8 +168,13 @@ def db_get_followings(username):
 
 def db_black_user(username_1, username_2):
     try:
-        followship = Blackship(username_1=username_1, username_2=username_2)
-        db.session.add(followship)
+        status, res = db_get_user_blacklist(username_1)
+        if not status:
+            return False, res
+        if username_2 in res:
+            return False, "the target user has been blocked"
+        blackship = Blackship(username_1=username_1, username_2=username_2)
+        db.session.add(blackship)
         db.session.commit()
         return True, "success"
     except Exception as e:
@@ -169,6 +184,11 @@ def db_black_user(username_1, username_2):
 
 def db_unblack_user(username_1, username_2):
     try:
+        status, res = db_get_user_blacklist(username_1)
+        if not status:
+            return False, res
+        if username_2 in res:
+            return False, "the target user has not been blocked"
         db.session.execute(f"DELETE FROM followship WHERE username_1 = '{username_1}' and username_2 ='{username_2}';")
         db.session.commit()
         return True, "success"
@@ -227,6 +247,17 @@ def db_get_user_moment(current_user, target_user, page):
             moments.append(moment)
         moments = moments[page * 10 : (page + 1) * 10]
         return True, moments
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_star_moment(username, moment_id):
+    try:
+        followship = Blackship(username_1=username_1, username_2=username_2)
+        db.session.add(followship)
+        db.session.commit()
+        return True, "success"
     except Exception as e:
         print(str(e))
         return False, str(e)

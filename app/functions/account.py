@@ -246,3 +246,25 @@ def api_get_follower():
     if status:
         return jsonify(message), 200
     return "failed", 500
+
+
+@account_bp.route('/black_user/', methods=['POST'])
+@swag_from('swagger/blackUser.yml')
+@login_required
+def api_black_user():
+    body_json = request.json
+    status, message = db_black_user(identify(request.headers.get("Authorization", default=None)), body_json['target_username'])
+    if status:
+        return 'success', 200
+    return message, 500
+
+
+@account_bp.route('/unblack_user/', methods=['POST'])
+@swag_from('swagger/unblackUser.yml')
+@login_required
+def api_unblack_user():
+    body_json = request.json
+    status, message = db_unblack_user(identify(request.headers.get("Authorization", default=None)), str(body_json['target_username']))
+    if status:
+        return 'success', 200
+    return message, 500
