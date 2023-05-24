@@ -189,16 +189,44 @@ def db_get_user_blacklist(username):
         return False, str(e)
     
 
-def db_add_new_moment(username, title, content, img_nums):
+def db_add_new_moment(username, title, content, img_nums, tag):
     try:
         create_time = datetime.datetime.now()
-        moment = Moment(username=username, title=title, content=content, img_nums=img_nums, time=create_time)
+        moment = Moment(username=username, title=title, content=content, img_nums=img_nums, time=create_time, tag=tag)
         db.session.add(moment)
         db.session.commit()
         cursor = db.session.execute(f"SELECT id FROM moment WHERE username = '{username}' AND time = '{create_time}';")
         for cur in cursor:
             return True, cur[0]
         return False, "can not find id of the moment"
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+# 按用户名获取动态
+def db_get_user_moment(current_user, target_user, page):
+    """
+    parameters:
+        page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
+    """
+    try:
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC;")
+        moments = []
+        for cur in cursor:
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'time': cur[6]}
+            cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False'")
+            star_user_list = [row[0] for row in cursor_star.fetchall()]
+            moment['is_current_user_star'] = current_user in star_user_list
+            moment['star_nums'] = len(star_user_list)
+
+            cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'True'")
+            like_user_list = [row[0] for row in cursor_like.fetchall()]
+            moment['is_current_user_like'] = current_user in like_user_list
+            moment['like_nums'] = len(like_user_list)
+            moments.append(moment)
+        moments = moments[page * 10 : (page + 1) * 10]
+        return True, moments
     except Exception as e:
         print(str(e))
         return False, str(e)

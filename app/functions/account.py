@@ -110,6 +110,8 @@ def create_new_account():
     # 注册新的账号，成功则返回 'success' 及201，否则打印错误信息到后端控制台并返回给前端
     body_data = request.json
     username = body_data['username']
+    if ' ' in username:
+        return 'invalid username', 400
     password = body_data['password']
     # email = body_data['email']
     # verify_code = body_data['verify_code']
@@ -151,7 +153,7 @@ def api_change_avatar():
     if file.filename == '':
         return 'No selected file', 400
     filename = secure_filename(file.filename)
-    if filename.split('.')[-1] not in ['jpg', 'png', 'jpeg', 'gif', 'bmp']:
+    if filename.split('.')[-1].lower() not in ['jpg', 'png', 'jpeg', 'gif', 'bmp']:
         return 'unsupport file type', 400
 
     username = identify(request.headers.get("Authorization", default=None))

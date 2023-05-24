@@ -4,7 +4,7 @@ parameters:
     in: body
     type: string
     required: true
-    example: 'Li Hua'
+    example: 'LiHua'
   - name: password
     in: body
     type: string
@@ -13,5 +13,7 @@ parameters:
 responses:
   201:
     description: 成功
+  400:
+    description: username不合法
   500:
     description: 注册失败

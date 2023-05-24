@@ -47,6 +47,7 @@ class Moment(db.Model):
     title = db.Column(db.String(42), doc="TITLE")
     content = db.Column(db.String(2000), doc="Content")
     img_nums = db.Column(db.Integer, doc="图片数目")
+    tag = db.Column(db.String(20), doc='信息类型，包含校园资讯、二手交易、学习科研、吃喝玩乐')
 
     time = db.Column(db.DateTime, doc="创建时间")
 
@@ -73,3 +74,4 @@ class LikeAndStar(db.Model):
     
     moment_id = db.Column(db.Integer, doc="动态id")
     _type = db.Column(db.Boolean, doc="type, True-Like, False-Star")
+    username = db.Column(db.String(32), doc="点赞/收藏者用户名")
