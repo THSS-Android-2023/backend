@@ -1,3 +1,5 @@
+tags:
+- name: Account
 description: 上传头像API
 parameters:
   - in: formData

@@ -1,3 +1,5 @@
+tags:
+- name: Account
 description: 获取某用户个人简介、头像URL、昵称、关注数与被关注数，以及是否被当前用户拉黑
 parameters:
   - name: username

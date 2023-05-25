@@ -1,3 +1,5 @@
+tags:
+- name: Account
 description: 获取当前登录用户所有已关注的用户的username及信息
 responses:
   200:

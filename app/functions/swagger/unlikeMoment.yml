@@ -1,3 +1,5 @@
+tags:
+- name: Moment
 description: 取消点赞一条动态
 parameters:
   - name: moment_id

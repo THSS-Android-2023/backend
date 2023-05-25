@@ -1,3 +1,5 @@
+tags:
+- name: Account
 description: 修改个人简介
 parameters:
   - name: intro

@@ -1,3 +1,5 @@
+tags:
+- name: Account
 description: 取消拉黑一名用户
 parameters:
   - name: target_username

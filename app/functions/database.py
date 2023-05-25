@@ -512,3 +512,14 @@ def db_get_tag_moment(current_user, page, filter, tag):
     except Exception as e:
         print(str(e))
         return False, str(e)
+
+
+def db_add_new_comment(username, moment_id, content):
+    try:
+        comment = Comment(username=username, moment_id=moment_id, content=content, time=datetime.datetime.now())
+        db.session.add(comment)
+        db.session.commit()
+        return True, ''
+    except Exception as e:
+        print(str(e))
+        return False, str(e)

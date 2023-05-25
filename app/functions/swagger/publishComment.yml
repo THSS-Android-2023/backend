@@ -1,0 +1,22 @@
+tags:
+- name: Comment
+description: 发布新评论
+parameters:
+  - name: content
+    in: body
+    type: string
+    required: true
+    example: 'CONTENT'
+  - name: moment_id
+    in: body
+    type: integer
+    required: true
+    example: '1'
+    description: 在哪条帖子下面发评论
+responses:
+  200:
+    description: 成功
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: server原因发布失败

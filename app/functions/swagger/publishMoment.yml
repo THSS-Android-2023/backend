@@ -1,3 +1,5 @@
+tags:
+- name: Moment
 description: 发布新动态
 parameters:
   - in: formData

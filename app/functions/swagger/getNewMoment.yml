@@ -1,3 +1,5 @@
+tags:
+- name: Moment
 description: 获取最新的动态，并根据page值切割返回指定的10条动态。
 parameters:
   - name: page
