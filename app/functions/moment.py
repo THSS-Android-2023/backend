@@ -16,14 +16,13 @@ tag_map = {'xyzx': '校园资讯', 'esjy': '二手交易', 'xxky': '学习科研
 @swag_from('swagger/publishMoment.yml')
 @login_required
 def api_publish_a_new_moment():
-    body_data = request.json
-    tag = body_data['tag']
+    tag = request.form.get('tag', '')
     if tag not in ['校园资讯', '二手交易', '学习科研', '吃喝玩乐']:
         return 'unsupport tag', 400
     if 'files[]' in request.files:    
         files = request.files.getlist('files[]')
         img_nums = len(files)
-        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), body_data['title'], body_data['content'], img_nums, tag, body_data['location'])
+        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), img_nums, tag, request.form.get('location', ''))
         if not status:
             return res, 500
         index = 0
@@ -44,7 +43,7 @@ def api_publish_a_new_moment():
             file.save(filepath)
         return res, 200
     else:
-        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), body_data['title'], body_data['content'], 0, tag, body_data['location'])
+        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), 0, tag, request.form.get('location', ''))
         if status:
             return res, 200
         return res, 500

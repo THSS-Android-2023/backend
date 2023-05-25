@@ -1,0 +1,16 @@
+tags:
+- name: Comment
+description: 获取某帖子下的所有评论
+parameters:
+  - name: moment_id
+    in: url
+    type: integer
+    required: true
+    example: 1
+responses:
+  200:
+    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'moment_id':..., 'username':..., 'content':..., 'time':...}
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: 失败，并返回错误原因

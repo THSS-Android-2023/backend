@@ -280,7 +280,12 @@ def db_get_new_moment(current_user, page):
     try:
         cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
         moments = []
+        status, res = db_get_user_blacklist(current_user)
+        if not status:
+            return False, res
         for cur in cursor:
+            if cur[1] in res:
+                continue  # 在黑名单
             moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False';")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
@@ -415,7 +420,12 @@ def db_get_followings_moment(username, page, filter):
         if not status:
             return False, res
         moments = []
+        status, _res = db_get_user_blacklist(username)
+        if not status:
+            return False, _res
         for following in res:
+            if following['username'] in _res:
+                continue  # 在黑名单
             cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{following['username']}' ORDER BY id DESC;")
             for cur in cursor:
                 moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
@@ -464,7 +474,12 @@ def db_get_hot_moment(current_user, page):
         top_moments = db.session.query(Moment).join(weighted_counts, Moment.id == weighted_counts.c.id).order_by(weighted_counts.c.weighted_count.desc()).offset(page * 10).limit(10).all()
         moments = []
 
+        status, res = db_get_user_blacklist(current_user)
+        if not status:
+            return False, res
         for moment in top_moments:
+            if moment.username in res:
+                continue  # 在黑名单
             moment_dict = {
                 'id': moment.id,
                 'username': moment.username,
@@ -503,7 +518,12 @@ def db_get_tag_moment(current_user, page, filter, tag):
     try:
         cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE tag = '{tag}' ORDER BY id DESC;")
         moments = []
+        status, res = db_get_user_blacklist(current_user)
+        if not status:
+            return False, res
         for cur in cursor:
+            if cur[1] in res:
+                continue  # 在黑名单
             moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False';")
             star_user_list = [row[0] for row in cursor_star.fetchall()]

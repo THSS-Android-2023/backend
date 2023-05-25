@@ -35,9 +35,7 @@ def api_del_comment():
 @swag_from('swagger/getComment.yml')
 @login_required
 def api_get_comment(moment_id):
-    status, res = db_del_comment(identify(request.headers.get("Authorization", default=None)), request.json['comment_id'])
+    status, res = db_get_comment(moment_id)
     if status:
-        return 'success', 200
-    if res == 'user error':
-        return 'invalid user', 401
+        return jsonify(res), 200
     return res, 500

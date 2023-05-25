@@ -8,23 +8,23 @@ parameters:
     required: false
     description: 图片/视频文件，支持jpg, png, jpeg, gif, bmp, mp4, avi, webm，该字段留空则表示该动态不包含图片/视频。
   - name: title
-    in: body
+    in: formData
     type: string
     required: true
     example: 'TITLE'
   - name: content
-    in: body
+    in: formData
     type: string
     required: true
     example: 'CONTENT'
   - name: tag
-    in: body
+    in: formData
     type: string
     required: true
     example: '吃喝玩乐'
     description: 信息类型，包含校园资讯、二手交易、学习科研、吃喝玩乐
   - name: location
-    in: body
+    in: formData
     type: string
     required: true
     example: 'Beijing, China'
