@@ -9,6 +9,7 @@ from app.functions.account import login_required, identify
 
 
 moment_bp = Blueprint("moment", __name__)
+tag_map = {'xyzx': '校园资讯', 'esjy': '二手交易', 'xxky': '学习科研', 'chwl': '吃喝玩乐'}
 
 
 @moment_bp.route('/publish_moment/', methods=['POST'])
@@ -137,13 +138,44 @@ def api_get_new_moment(page):
     return res, 500
 
 
-@moment_bp.route('/get_followings_moment/<page>/', methods=['GET'])
+@moment_bp.route('/get_followings_moment/<filter>/<page>/', methods=['GET'])
 @swag_from('swagger/getFollowingsMoment.yml')
 @login_required
-def api_get_new_moment(page):
+def api_get_followings_moment(filter, page):
     if int(page) < 0:
         return 'invalid page', 400
-    status, res = db_get_followings_moment(identify(request.headers.get("Authorization", default=None)), page)
+    if str(filter) not in ['time', 'like', 'comment']:
+        return 'invalid filter', 400
+    status, res = db_get_followings_moment(identify(request.headers.get("Authorization", default=None)), page, filter)
+    if status:
+        return jsonify(res), 200
+    return res, 500
+
+
+@moment_bp.route('/get_hot_moment/<page>/', methods=['GET'])
+@swag_from('swagger/getHotMoment.yml')
+@login_required
+def api_get_hot_moment(page):
+    if int(page) < 0:
+        return 'invalid page', 400
+    status, res = db_get_hot_moment(identify(request.headers.get("Authorization", default=None)), page)
+    if status:
+        return jsonify(res), 200
+    return res, 500
+
+
+@moment_bp.route('/get_tag_moment/<tag>/<filter>/<page>/', methods=['GET'])
+@swag_from('swagger/getTagMoment.yml')
+@login_required
+def api_get_tag_moment(tag, filter, page):
+    if int(page) < 0:
+        return 'invalid page', 400
+    if str(filter) not in ['time', 'like', 'comment']:
+        return 'invalid filter', 400
+    if str(tag) not in ['xyzx', 'esjy', 'xxky', 'chwl']:
+        return 'unsupport tag', 400
+    tag = tag_map[tag]
+    status, res = db_get_tag_moment(identify(request.headers.get("Authorization", default=None)), page, filter, tag)
     if status:
         return jsonify(res), 200
     return res, 500

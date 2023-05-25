@@ -1,4 +1,4 @@
-description: 获取已关注用户发布的动态，并根据page值切割返回指定的10条动态。
+description: 获取最近热门的动态，并根据page值切割返回指定的10条动态。
 parameters:
   - name: page
     in: url
@@ -6,17 +6,11 @@ parameters:
     required: true
     example: '1'
     description: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
-  - name: filter
-    in: url
-    type: string
-    required: true
-    example: 'time'
-    description: 筛选条件，'time'、'like'、'comment'三选一
 responses:
   200:
     description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'username':..., 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'location':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':...}
   400:
-    description: page/filter不合法
+    description: page不合法
   401:
     description: 当前处于未登录状态
   500:
