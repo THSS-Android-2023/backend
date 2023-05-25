@@ -17,3 +17,27 @@ def api_publish_a_new_comment():
     if status:
         return 200, 'success'
     return 500, res
+
+
+@comment_bp.route('/del_comment/', methods=['POST'])
+@swag_from('swagger/delComment.yml')
+@login_required
+def api_del_comment():
+    status, res = db_del_comment(identify(request.headers.get("Authorization", default=None)), request.json['comment_id'])
+    if status:
+        return 'success', 200
+    if res == 'user error':
+        return 'invalid user', 401
+    return res, 500
+
+
+@comment_bp.route('/get_comment/<moment_id>/', methods=['GET'])
+@swag_from('swagger/getComment.yml')
+@login_required
+def api_get_comment(moment_id):
+    status, res = db_del_comment(identify(request.headers.get("Authorization", default=None)), request.json['comment_id'])
+    if status:
+        return 'success', 200
+    if res == 'user error':
+        return 'invalid user', 401
+    return res, 500

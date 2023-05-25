@@ -179,3 +179,15 @@ def api_get_tag_moment(tag, filter, page):
     if status:
         return jsonify(res), 200
     return res, 500
+
+
+@moment_bp.route('/del_moment/', methods=['POST'])
+@swag_from('swagger/delMoment.yml')
+@login_required
+def api_del_moment():
+    status, res = db_del_moment(identify(request.headers.get("Authorization", default=None)), request.json['moment_id'])
+    if status:
+        return 'success', 200
+    if res == 'user error':
+        return 'invalid user', 401
+    return res, 500

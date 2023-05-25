@@ -1,0 +1,16 @@
+tags:
+- name: Comment
+description: 删除一条评论
+parameters:
+  - name: comment_id
+    in: body
+    type: integer
+    required: true
+    example: 1
+responses:
+  200:
+    description: 成功
+  401:
+    description: 当前处于未登录状态/发布comment的user不是当前用户
+  500:
+    description: 删除失败，并返回具体失败原因

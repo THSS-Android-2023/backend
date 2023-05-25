@@ -226,6 +226,21 @@ def db_add_new_moment(username, title, content, img_nums, tag, location):
         return False, str(e)
 
 
+def db_del_moment(username, moment_id):
+    try:
+        cursor = db.session.execute(f"SELECT username FROM moment WHERE id = '{moment_id}';")
+        for cur in cursor:
+            if username == cur[0]:
+                db.session.execute(f"DELETE FROM moment WHERE id = '{moment_id}';")
+                db.session.commit()
+                return True, ''
+            return False, 'user error'
+        return False, 'no such moment'
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
 # 按用户名获取动态
 def db_get_user_moment(current_user, target_user, page):
     """
@@ -520,6 +535,33 @@ def db_add_new_comment(username, moment_id, content):
         db.session.add(comment)
         db.session.commit()
         return True, ''
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_get_comment(moment_id):
+    try:
+        cursor = db.session.execute(f"SELECT id, moment_id, username, content, time FROM comment WHERE moment_id = '{moment_id}';")
+        comments = []
+        for cur in cursor:
+            comments.append({'id': cur[0], 'moment_id': cur[1], 'username': cur[2], 'content': cur[3], 'time': cur[4]})
+        return True, comments
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_del_comment(username, comment_id):
+    try:
+        cursor = db.session.execute(f"SELECT username FROM comment WHERE id = '{comment_id}';")
+        for cur in cursor:
+            if username == cur[0]:
+                db.session.execute(f"DELETE FROM comment WHERE id = '{comment_id}';")
+                db.session.commit()
+                return True, ''
+            return False, 'user error'
+        return False, 'no such comment'
     except Exception as e:
         print(str(e))
         return False, str(e)
