@@ -20,6 +20,11 @@ parameters:
     type: string
     required: true
     example: 'CONTENT'
+  - name: location
+    in: body
+    type: string
+    required: true
+    example: 'Beijing, China'
     description: 信息类型，包含校园资讯、二手交易、学习科研、吃喝玩乐
 responses:
   200:

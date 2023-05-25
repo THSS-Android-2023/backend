@@ -1,4 +1,3 @@
-import datetime
 import os
 
 from flask import Blueprint, request, jsonify
@@ -23,7 +22,7 @@ def api_publish_a_new_moment():
     if 'files[]' in request.files:    
         files = request.files.getlist('files[]')
         img_nums = len(files)
-        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), body_data['title'], body_data['content'], img_nums, tag)
+        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), body_data['title'], body_data['content'], img_nums, tag, body_data['location'])
         if not status:
             return res, 500
         index = 0
@@ -44,7 +43,7 @@ def api_publish_a_new_moment():
             file.save(filepath)
         return res, 200
     else:
-        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), body_data['title'], body_data['content'], 0, tag)
+        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), body_data['title'], body_data['content'], 0, tag, body_data['location'])
         if status:
             return res, 200
         return res, 500
@@ -124,3 +123,27 @@ def api_unlike_moment():
     if status:
         return 'success', 200
     return message, 500
+
+
+@moment_bp.route('/get_new_moment/<page>/', methods=['GET'])
+@swag_from('swagger/getNewMoment.yml')
+@login_required
+def api_get_new_moment(page):
+    if int(page) < 0:
+        return 'invalid page', 400
+    status, res = db_get_new_moment(identify(request.headers.get("Authorization", default=None)), page)
+    if status:
+        return jsonify(res), 200
+    return res, 500
+
+
+@moment_bp.route('/get_followings_moment/<page>/', methods=['GET'])
+@swag_from('swagger/getFollowingsMoment.yml')
+@login_required
+def api_get_new_moment(page):
+    if int(page) < 0:
+        return 'invalid page', 400
+    status, res = db_get_followings_moment(identify(request.headers.get("Authorization", default=None)), page)
+    if status:
+        return jsonify(res), 200
+    return res, 500

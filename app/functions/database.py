@@ -209,10 +209,10 @@ def db_get_user_blacklist(username):
         return False, str(e)
     
 
-def db_add_new_moment(username, title, content, img_nums, tag):
+def db_add_new_moment(username, title, content, img_nums, tag, location):
     try:
         create_time = datetime.datetime.now()
-        moment = Moment(username=username, title=title, content=content, img_nums=img_nums, time=create_time, tag=tag)
+        moment = Moment(username=username, title=title, content=content, img_nums=img_nums, time=create_time, tag=tag, location=location)
         db.session.add(moment)
         db.session.commit()
         cursor = db.session.execute(f"SELECT id FROM moment WHERE username = '{username}' AND time = '{create_time}';")
@@ -231,10 +231,36 @@ def db_get_user_moment(current_user, target_user, page):
         page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
     """
     try:
-        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
         moments = []
         for cur in cursor:
-            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'time': cur[6]}
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
+            cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False'")
+            star_user_list = [row[0] for row in cursor_star.fetchall()]
+            moment['is_current_user_star'] = current_user in star_user_list
+            moment['star_nums'] = len(star_user_list)
+
+            cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'True'")
+            like_user_list = [row[0] for row in cursor_like.fetchall()]
+            moment['is_current_user_like'] = current_user in like_user_list
+            moment['like_nums'] = len(like_user_list)
+            moments.append(moment)
+        return True, moments
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_get_new_moment(current_user, page):
+    """
+    parameters:
+        page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
+    """
+    try:
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
+        moments = []
+        for cur in cursor:
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False'")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = current_user in star_user_list
@@ -263,10 +289,10 @@ def db_get_user_star_moment_id_list(username):
 
 def db_get_moment_by_id(username, moment_id):
     try:
-        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, time FROM moment WHERE id = '{moment_id}';")
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE id = '{moment_id}';")
         moment = {}
         for cur in cursor:
-            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'time': cur[6]}
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False'")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = username in star_user_list
@@ -349,6 +375,32 @@ def db_unlike_moment(username, moment_id):
         db.session.execute(f"DELETE FROM like_and_star WHERE moment_id = '{moment_id}' AND username ='{username}' AND _type = 'True';")
         db.session.commit()
         return True, "success"
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_get_followings_moment(username, page):
+    try:
+        status, res = db_get_followings(username)
+        if not status:
+            return False, res
+        moments = []
+        for following in res:
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{following['username']}' ORDER BY id DESC;")
+            for cur in cursor:
+                moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
+                cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'False'")
+                star_user_list = [row[0] for row in cursor_star.fetchall()]
+                moment['is_current_user_star'] = username in star_user_list
+                moment['star_nums'] = len(star_user_list)
+
+                cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = 'True'")
+                like_user_list = [row[0] for row in cursor_like.fetchall()]
+                moment['is_current_user_like'] = username in like_user_list
+                moment['like_nums'] = len(like_user_list)
+                moments.append(moment)
+        return True, moments[page * 10 : (page + 1) * 10]
     except Exception as e:
         print(str(e))
         return False, str(e)

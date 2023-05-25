@@ -1,10 +1,5 @@
-description: 获取某用户发布的动态，并根据page值切割返回指定的10条动态。
+description: 获取最新的动态，并根据page值切割返回指定的10条动态。
 parameters:
-  - name: username
-    in: url
-    type: string
-    required: true
-    example: 'LiHua'
   - name: page
     in: url
     type: string
