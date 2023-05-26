@@ -23,5 +23,5 @@ def init_db():
 
 
 if __name__ == '__main__':
-    print('ss')
     manager.run()
+

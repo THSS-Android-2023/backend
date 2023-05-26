@@ -562,7 +562,7 @@ def db_add_new_comment(username, moment_id, content):
 
 def db_get_comment(moment_id):
     try:
-        cursor = db.session.execute(f"SELECT id, moment_id, username, content, time FROM comment WHERE moment_id = '{moment_id}';")
+        cursor = db.session.execute(f"SELECT id, moment_id, username, content, time FROM comment WHERE moment_id = '{moment_id}' ORDER BY id;")
         comments = []
         for cur in cursor:
             comments.append({'id': cur[0], 'moment_id': cur[1], 'username': cur[2], 'content': cur[3], 'time': cur[4]})
@@ -582,6 +582,35 @@ def db_del_comment(username, comment_id):
                 return True, ''
             return False, 'user error'
         return False, 'no such comment'
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_add_new_message(current_user, target_user, content):
+    try:
+        message = Message(username_1=current_user, username_2=target_user, content=content, time=datetime.datetime.now())
+        db.session.add(message)
+        db.session.commit()
+        return True, ''
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_get_message(current_user, target_user, base, direction):
+    try:
+        if base == '':
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE username_1 IN ('{current_user}', '{target_user}') ORDER BY id LIMIT 10;")
+        elif direction == 'old':
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id < '{base}' AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
+        else:
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id > '{base}' AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
+        messages = []
+        for cur in cursor:
+            message = {'id': cur[0], 'sender': cur[1], 'receiver': cur[2], 'content': cur[3], 'time': cur[4]}
+            messages.append(message)
+        return True, messages
     except Exception as e:
         print(str(e))
         return False, str(e)

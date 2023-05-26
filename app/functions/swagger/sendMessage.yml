@@ -1,0 +1,21 @@
+tags:
+- name: Message
+description: 发送私信
+parameters:
+  - name: target_user
+    in: body
+    type: string
+    required: true
+    example: 'xuhb20'
+  - name: content
+    in: body
+    type: string
+    required: true
+    example: 'CONTENT'
+responses:
+  200:
+    description: 成功
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: server原因发布失败

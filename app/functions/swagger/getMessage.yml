@@ -1,0 +1,30 @@
+tags:
+- name: Message
+description: 获取当前登录用户与某用户的聊天记录，通过base参数指定基准消息id，通过direction指定从基准消息开始向前/后查看。
+parameters:
+  - name: target_user
+    in: url
+    type: string
+    required: true
+    example: 'LiHua'
+  - name: base
+    in: url
+    type: string
+    required: true
+    example: '1'
+    description: 基准消息的id，如留空则表示获取最新的10条
+  - name: direction
+    in: url
+    type: string
+    required: true
+    example: 'new'
+    description: 从基准消息开始向前还是向后查看5条消息，仅支持'new':向后、'old':向前
+responses:
+  200:
+    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'sender':..., 'receiver':..., 'content':..., 'time':...}
+  400:
+    description: base/direction不合法
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: 失败，并返回错误原因

@@ -110,7 +110,7 @@ def create_new_account():
     # 注册新的账号，成功则返回 'success' 及201，否则打印错误信息到后端控制台并返回给前端
     body_data = request.json
     username = body_data['username']
-    if ' ' in username:
+    if ' ' in username or username == 'default':
         return 'invalid username', 400
     password = body_data['password']
     # email = body_data['email']

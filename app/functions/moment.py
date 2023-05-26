@@ -41,7 +41,7 @@ def api_publish_a_new_moment():
             os.makedirs(directory, exist_ok=True)
             filepath = os.path.join(directory, filename)
             file.save(filepath)
-        return res, 200
+        return str(res), 200
     else:
         status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), 0, tag, request.form.get('location', ''))
         if status:

@@ -76,3 +76,16 @@ class LikeAndStar(db.Model):
     moment_id = db.Column(db.Integer, doc="动态id")
     _type = db.Column(db.Boolean, doc="type, True-Like, False-Star")
     username = db.Column(db.String(32), doc="点赞/收藏者用户名")
+
+
+class Message(db.Model):
+    __tablename__ = "message"
+
+    id = db.Column(db.Integer, primary_key=True,
+                   autoincrement=True, doc="id")
+    
+    username_1 = db.Column(db.String(32), doc="发消息者")
+    username_2 = db.Column(db.String(32), doc="收消息者")
+    content = db.Column(db.String(200), doc="Content")
+
+    time = db.Column(db.DateTime, doc="创建时间")
