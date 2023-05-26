@@ -180,6 +180,18 @@ def api_get_tag_moment(tag, filter, page):
     return res, 500
 
 
+@moment_bp.route('/search_moment/<key_words>/<page>/', methods=['GET'])
+@swag_from('swagger/searchMoment.yml')
+@login_required
+def api_search_moment(key_words, page):
+    if int(page) < 0:
+        return 'invalid page', 400
+    status, res = db_search_moment(identify(request.headers.get("Authorization", default=None)), key_words, page)
+    if status:
+        return jsonify(res), 200
+    return res, 500
+
+
 @moment_bp.route('/del_moment/', methods=['POST'])
 @swag_from('swagger/delMoment.yml')
 @login_required

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.models.models import *
 from app.extensions.extensions import db
@@ -548,6 +548,38 @@ def db_get_tag_moment(current_user, page, filter, tag):
         print(str(e))
         return False, str(e)
 
+
+def db_search_moment(current_user, key_words, page):
+    try:
+        key_words = key_words.split('%20')
+        results = []
+        for key_word in key_words:
+            results = results + Moment.query.filter(or_(
+                Moment.title.contains(key_word),
+                Moment.tag.contains(key_word),
+                Moment.content.contains(key_word),
+                Moment.username.contains(key_word)
+            )).all()
+        results = results[page * 10 : (page + 1) * 10]
+        results = [{k: v for k, v in moment.__dict__.items() if k != '_sa_instance_state'} for moment in results]
+        for moment in results:
+            cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment['id']}' AND _type = 'False';")
+            star_user_list = [row[0] for row in cursor_star.fetchall()]
+            moment['is_current_user_star'] = current_user in star_user_list
+            moment['star_nums'] = len(star_user_list)
+
+            cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment['id']}' AND _type = 'True';")
+            like_user_list = [row[0] for row in cursor_like.fetchall()]
+            moment['is_current_user_like'] = current_user in like_user_list
+            moment['like_nums'] = len(like_user_list)
+
+            cursor_comment_nums = db.session.execute(f"SELECT COUNT(id) FROM comment WHERE moment_id = '{moment['id']}';")
+            for _cur in cursor_comment_nums:
+                moment['comment_nums'] = _cur[0]
+        return True, results
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
 
 def db_add_new_comment(username, moment_id, content):
     try:
