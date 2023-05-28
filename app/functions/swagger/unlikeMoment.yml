@@ -4,7 +4,7 @@ description: 取消点赞一条动态
 parameters:
   - name: moment_id
     in: body
-    type: integer
+    type: string
     required: true
     example: 1
 responses:

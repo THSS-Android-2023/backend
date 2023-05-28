@@ -15,8 +15,8 @@ def api_publish_a_new_comment():
     body_data = request.json
     status, res = db_add_new_comment(identify(request.headers.get("Authorization", default=None)), body_data['moment_id'], body_data['content'])
     if status:
-        return 200, 'success'
-    return 500, res
+        return 'success', 200
+    return res, 500
 
 
 @comment_bp.route('/del_comment/', methods=['POST'])

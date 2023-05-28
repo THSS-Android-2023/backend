@@ -16,7 +16,7 @@ parameters:
     description: 筛选条件，'time'、'like'、'comment'三选一
 responses:
   200:
-    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'username':..., 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'location':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':...}
+    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'username':..., 'avatar':..., 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'location':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':...}
   400:
     description: page/filter不合法
   401:

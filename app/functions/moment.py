@@ -43,9 +43,10 @@ def api_publish_a_new_moment():
             file.save(filepath)
         return str(res), 200
     else:
+        print("No img")
         status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), 0, tag, request.form.get('location', ''))
         if status:
-            return res, 200
+            return str(res), 200
         return res, 500
 
 
@@ -66,7 +67,7 @@ def api_get_user_moment(username, page):
 @login_required
 def api_star_moment():
     body_json = request.json
-    status, message = db_star_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    status, message = db_star_moment(identify(request.headers.get("Authorization", default=None)), int(body_json['moment_id']))
     if status:
         return 'success', 200
     return message, 500
@@ -77,7 +78,7 @@ def api_star_moment():
 @login_required
 def api_unstar_moment():
     body_json = request.json
-    status, message = db_unstar_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    status, message = db_unstar_moment(identify(request.headers.get("Authorization", default=None)), int(body_json['moment_id']))
     if status:
         return 'success', 200
     return message, 500
@@ -89,6 +90,7 @@ def api_unstar_moment():
 def api_get_star_moment(page):
     if int(page) < 0:
         return 'invalid page', 400
+    page = int(page)
     username = identify(request.headers.get("Authorization", default=None))
     status, res = db_get_user_star_moment_id_list(username)
     if not status:
@@ -108,7 +110,7 @@ def api_get_star_moment(page):
 @login_required
 def api_like_moment():
     body_json = request.json
-    status, message = db_like_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    status, message = db_like_moment(identify(request.headers.get("Authorization", default=None)), int(body_json['moment_id']))
     if status:
         return 'success', 200
     return message, 500
@@ -119,13 +121,13 @@ def api_like_moment():
 @login_required
 def api_unlike_moment():
     body_json = request.json
-    status, message = db_unlike_moment(identify(request.headers.get("Authorization", default=None)), body_json['moment_id'])
+    status, message = db_unlike_moment(identify(request.headers.get("Authorization", default=None)), int(body_json['moment_id']))
     if status:
         return 'success', 200
     return message, 500
 
 
-@moment_bp.route('/get_new_moment/<page>/', methods=['GET'])
+@moment_bp.route('/get_new_moment/<page>/', methods=['GET', 'POST'])
 @swag_from('swagger/getNewMoment.yml')
 @login_required
 def api_get_new_moment(page):
@@ -133,6 +135,7 @@ def api_get_new_moment(page):
         return 'invalid page', 400
     status, res = db_get_new_moment(identify(request.headers.get("Authorization", default=None)), page)
     if status:
+        print(len(res))
         return jsonify(res), 200
     return res, 500
 
@@ -145,6 +148,8 @@ def api_get_followings_moment(filter, page):
         return 'invalid page', 400
     if str(filter) not in ['time', 'like', 'comment']:
         return 'invalid filter', 400
+    page = int(page)
+    filter = str(filter)
     status, res = db_get_followings_moment(identify(request.headers.get("Authorization", default=None)), page, filter)
     if status:
         return jsonify(res), 200
@@ -157,9 +162,11 @@ def api_get_followings_moment(filter, page):
 def api_get_hot_moment(page):
     if int(page) < 0:
         return 'invalid page', 400
+    page = int(page)
     status, res = db_get_hot_moment(identify(request.headers.get("Authorization", default=None)), page)
     if status:
         return jsonify(res), 200
+    print(res)
     return res, 500
 
 
@@ -186,6 +193,7 @@ def api_get_tag_moment(tag, filter, page):
 def api_search_moment(key_words, page):
     if int(page) < 0:
         return 'invalid page', 400
+    page = int(page)
     status, res = db_search_moment(identify(request.headers.get("Authorization", default=None)), key_words, page)
     if status:
         return jsonify(res), 200
