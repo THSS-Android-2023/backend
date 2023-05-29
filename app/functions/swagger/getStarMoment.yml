@@ -10,7 +10,7 @@ parameters:
     description: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
 responses:
   200:
-    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'username':..., 'avatar':..., 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':...}
+    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'username':..., 'avatar':..., 'is_current_user_follow':True or False, 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':...}
   400:
     description: page不合法
   401:

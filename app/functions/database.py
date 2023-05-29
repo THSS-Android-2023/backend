@@ -4,6 +4,7 @@ from sqlalchemy import func, or_
 
 from app.models.models import *
 from app.extensions.extensions import db
+from dateutil import parser
 
 
 # 添加新的用户
@@ -248,14 +249,18 @@ def db_get_user_moment(current_user, target_user, page):
         page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
     """
     try:
+        status, followings_list = db_get_followings(current_user)
+        followings_list = [user['username'] for user in followings_list]
         cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
         moments = []
         for cur in cursor:
-            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = current_user in star_user_list
             moment['star_nums'] = len(star_user_list)
+
+            moment['is_current_user_following'] = cur[1] in followings_list
             
             moment['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{moment['username']}';").fetchall()[0][0]
 
@@ -279,7 +284,9 @@ def db_get_new_moment(current_user, page):
     parameters:
         page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
     """
-    try:
+    try:        
+        status, followings_list = db_get_followings(current_user)
+        followings_list = [user['username'] for user in followings_list]
         cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
         moments = []
         status, res = db_get_user_blacklist(current_user)
@@ -288,12 +295,14 @@ def db_get_new_moment(current_user, page):
         for cur in cursor:
             if cur[1] in res:
                 continue  # 在黑名单
-            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             moment['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{moment['username']}';").fetchall()[0][0]
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = current_user in star_user_list
             moment['star_nums'] = len(star_user_list)
+            
+            moment['is_current_user_following'] = cur[1] in followings_list
 
             cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = True;")
             like_user_list = [row[0] for row in cursor_like.fetchall()]
@@ -304,6 +313,7 @@ def db_get_new_moment(current_user, page):
             for _cur in cursor_comment_nums:
                 moment['comment_nums'] = _cur[0]
             moments.append(moment)
+        print(moments)
         return True, moments
     except Exception as e:
         print(str(e))
@@ -322,14 +332,19 @@ def db_get_user_star_moment_id_list(username):
 
 def db_get_moment_by_id(username, moment_id):
     try:
+        
+        status, followings_list = db_get_followings(username)
+        followings_list = [user['username'] for user in followings_list]
         cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE id = '{moment_id}';")
         moment = {}
         for cur in cursor:
-            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = username in star_user_list
             moment['star_nums'] = len(star_user_list)
+
+            moment['is_current_user_following'] = cur[1] in followings_list
 
             cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = True;")
             like_user_list = [row[0] for row in cursor_like.fetchall()]
@@ -420,6 +435,9 @@ def db_unlike_moment(username, moment_id):
 
 def db_get_followings_moment(username, page, filter):
     try:
+        
+        status, followings_list = db_get_followings(username)
+        followings_list = [user['username'] for user in followings_list]
         status, res = db_get_followings(username)
         if not status:
             return False, res
@@ -430,14 +448,17 @@ def db_get_followings_moment(username, page, filter):
         for following in res:
             if following['username'] in _res:
                 continue  # 在黑名单
+            
             cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{following['username']}' ORDER BY id DESC;")
             for cur in cursor:
-                moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
+                moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
                 cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
                 star_user_list = [row[0] for row in cursor_star.fetchall()]
                 moment['is_current_user_star'] = username in star_user_list
                 moment['star_nums'] = len(star_user_list)
                 moment['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{moment['username']}';").fetchall()[0][0]
+
+                moment['is_current_user_following'] = cur[1] in followings_list
 
                 cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = True;")
                 like_user_list = [row[0] for row in cursor_like.fetchall()]
@@ -491,11 +512,15 @@ def db_get_hot_moment(current_user, page:int):
         moments = []
 
         status, res = db_get_user_blacklist(current_user)
+        
+        status, followings_list = db_get_followings(current_user)
+        followings_list = [user['username'] for user in followings_list]
         if not status:
             return False, res
         for moment in top_moments:
             if moment.username in res:
                 continue  # 在黑名单
+            
             moment_dict = {
                 'id': moment.id,
                 'username': moment.username,
@@ -504,13 +529,15 @@ def db_get_hot_moment(current_user, page:int):
                 'img_nums': moment.img_nums,
                 'tag': moment.tag,
                 'location': moment.location,
-                'time': moment.time,
+                'time': format_time(moment.time),
             }
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment.id}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment_dict['is_current_user_star'] = current_user in star_user_list
             moment_dict['star_nums'] = len(star_user_list)
             moment_dict['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{moment_dict['username']}';").fetchall()[0][0]
+
+            moment_dict['is_current_user_following'] = moment.username in followings_list
 
             cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment.id}' AND _type = True;")
             like_user_list = [row[0] for row in cursor_like.fetchall()]
@@ -533,6 +560,8 @@ def db_get_tag_moment(current_user, page, filter, tag):
         page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
     """
     try:
+        status, followings_list = db_get_followings(current_user)
+        followings_list = [user['username'] for user in followings_list]
         cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE tag = '{tag}' ORDER BY id DESC;")
         moments = []
         status, res = db_get_user_blacklist(current_user)
@@ -541,12 +570,14 @@ def db_get_tag_moment(current_user, page, filter, tag):
         for cur in cursor:
             if cur[1] in res:
                 continue  # 在黑名单
-            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': cur[7]}
+            moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = current_user in star_user_list
             moment['star_nums'] = len(star_user_list)
             moment['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{moment['username']}';").fetchall()[0][0]
+
+            moment['is_current_user_following'] = cur[1] in followings_list
 
             cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = True;")
             like_user_list = [row[0] for row in cursor_like.fetchall()]
@@ -569,6 +600,9 @@ def db_get_tag_moment(current_user, page, filter, tag):
 
 def db_search_moment(current_user, key_words, page):
     try:
+        
+        status, followings_list = db_get_followings(current_user)
+        followings_list = [user['username'] for user in followings_list]
         key_words = key_words.split('%20')
         results = []
         for key_word in key_words:
@@ -586,6 +620,8 @@ def db_search_moment(current_user, key_words, page):
             moment['is_current_user_star'] = current_user in star_user_list
             moment['star_nums'] = len(star_user_list)
             moment['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{moment['username']}';").fetchall()[0][0]
+
+            moment['is_current_user_following'] = moment['username'] in followings_list
 
             cursor_like = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment['id']}' AND _type = True;")
             like_user_list = [row[0] for row in cursor_like.fetchall()]
@@ -616,7 +652,8 @@ def db_get_comment(moment_id):
         cursor = db.session.execute(f"SELECT id, moment_id, username, content, time FROM comment WHERE moment_id = '{moment_id}' ORDER BY id;")
         comments = []
         for cur in cursor:
-            comment = {'id': cur[0], 'moment_id': cur[1], 'username': cur[2], 'content': cur[3], 'time': cur[4]}
+            
+            comment = {'id': cur[0], 'moment_id': cur[1], 'username': cur[2], 'content': cur[3], 'time': format_time(cur[4])}
             comment['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{comment['username']}';").fetchall()[0][0]
             comments.append(comment)
         return True, comments
@@ -661,9 +698,18 @@ def db_get_message(current_user, target_user, base, direction):
             cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id > '{base}' AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
         messages = []
         for cur in cursor:
-            message = {'id': cur[0], 'sender': cur[1], 'receiver': cur[2], 'content': cur[3], 'time': cur[4]}
+            message = {'id': cur[0], 'sender': cur[1], 'receiver': cur[2], 'content': cur[3], 'time': format_time(cur[4])}
             messages.append(message)
         return True, messages
     except Exception as e:
         print(str(e))
         return False, str(e)
+
+def format_time(_time) -> str:
+    if isinstance(_time, str):
+        time = parser.parse(_time).strftime('%Y-%-m-%-d %H:%M')
+    elif isinstance(_time, datetime.datetime):
+        time = _time.strftime('%Y-%-m-%-d %H:%M')
+    else:
+        time = ""
+    return time
