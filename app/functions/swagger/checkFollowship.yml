@@ -1,0 +1,8 @@
+tags:
+- name: Account
+description: 获得某用户是否被当前用户关注的信息
+responses:
+  200:
+    description: true/false
+  401:
+    description: 当前处于未登录状态

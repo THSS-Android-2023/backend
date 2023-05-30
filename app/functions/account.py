@@ -217,6 +217,16 @@ def api_follow_user():
         return 'success', 200
     return message, 500
 
+@account_bp.route('/check_followship/', methods=['GET'])
+@swag_from('swagger/checkFollowship.yml')
+@login_required
+def api_check_followship():
+    body_json = request.args
+    status, message = db_check_followship(identify(request.headers.get("Authorization", default=None)), body_json['target_username'])
+    if status:
+        return jsonify([message]), 200
+    return message, 500
+
 
 @account_bp.route('/unfollow_user/', methods=['POST'])
 @swag_from('swagger/unfollowUser.yml')
@@ -246,7 +256,6 @@ def api_get_follower():
     if status:
         return jsonify(message), 200
     return "failed", 500
-
 
 @account_bp.route('/black_user/', methods=['POST'])
 @swag_from('swagger/blackUser.yml')

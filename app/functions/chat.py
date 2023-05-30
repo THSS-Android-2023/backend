@@ -13,10 +13,13 @@ chat_bp = Blueprint("chat", __name__)
 @login_required
 def api_send_message():
     body_data = request.json
-    status, res = db_add_new_message(identify(request.headers.get("Authorization", default=None)), body_data['target_user'], body_data['content'])
+    sender = identify(request.headers.get("Authorization", default=None))
+    status, res = db_add_new_message(sender, body_data['target_user'], body_data['content'])
     if status:
-        return 200, 'success'
-    return 500, res
+        if db_add_notice(sender, body_data['target_user'], body_data['content'], '0'):
+            return 'success', 200
+        return 'add notice failed', 500
+    return res, 500
 
 
 @chat_bp.route('/get_message/<target_user>/<base>/<direction>/', methods=['GET'])
@@ -24,10 +27,10 @@ def api_send_message():
 @login_required
 def api_get_message(target_user, base, direction):
     if int(base) < 0:
-        return 400, 'invalid base'
+        return 'invalid base', 400
     if str(direction) not in ['new', 'old']:
-        return 400, 'invalid direction'
+        return 'invalid direction', 400
     status, res = db_get_message(identify(request.headers.get("Authorization", default=None)), target_user, base, direction)
     if status:
-        return 200, jsonify(res)
-    return 500, res
+        return jsonify(res), 200
+    return res, 500

@@ -1,0 +1,8 @@
+tags:
+- name: Notice
+description: 获取当前登录用户的新通知
+responses:
+  200:
+    description: 成功，并返回一个json，格式为{'sender':..., 'receiver':..., 'content':..., '_type':...}
+  401:
+    description: 当前处于未登录状态

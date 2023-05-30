@@ -89,3 +89,15 @@ class Message(db.Model):
     content = db.Column(db.String(200), doc="Content")
 
     time = db.Column(db.DateTime, doc="创建时间")
+
+
+class Notice(db.Model):
+    __tablename__ = "notice"
+
+    id = db.Column(db.Integer, primary_key=True,
+                   autoincrement=True, doc="id")
+    
+    sender = db.Column(db.String(32), doc="发消息者/点赞者/回复者/被关注者")
+    receiver = db.Column(db.String(32), doc="收消息者/收到点赞者/被回复者/关注者")
+    content = db.Column(db.String(200), doc="消息具体内容/点赞帖子id/回复帖子id/发布帖子id")
+    _type = db.Column(db.String(2), doc="类型，0-收到私信，1-信息被点赞，2-信息被回复，3-关注的用户发布新信息")

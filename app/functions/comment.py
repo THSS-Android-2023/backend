@@ -13,9 +13,15 @@ comment_bp = Blueprint("comment", __name__)
 @login_required
 def api_publish_a_new_comment():
     body_data = request.json
-    status, res = db_add_new_comment(identify(request.headers.get("Authorization", default=None)), body_data['moment_id'], body_data['content'])
+    current_user = identify(request.headers.get("Authorization", default=None))
+    status, res = db_add_new_comment(current_user, body_data['moment_id'], body_data['content'])
     if status:
-        return 'success', 200
+        status, result = db_get_moment_by_id(current_user, body_data['moment_id'])
+        if status:
+            if db_add_notice(current_user, result['username'], body_data['moment_id'], '2'):
+                return 'success', 200
+            return 'add notice failed', 500
+        return result, 500
     return res, 500
 
 

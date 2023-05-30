@@ -110,9 +110,16 @@ def api_get_star_moment(page):
 @login_required
 def api_like_moment():
     body_json = request.json
-    status, message = db_like_moment(identify(request.headers.get("Authorization", default=None)), int(body_json['moment_id']))
+    current_user = identify(request.headers.get("Authorization", default=None))
+    status, message = db_like_moment(current_user, int(body_json['moment_id']))
     if status:
-        return 'success', 200
+        status, res = db_get_moment_by_id(current_user, int(body_json['moment_id']))
+        if status:
+            status = db_add_notice(current_user, res['username'], body_json['moment_id'], '1')
+            if status:
+                return 'success', 200
+            return 'add notice failed', 500
+        return res, 500
     return message, 500
 
 

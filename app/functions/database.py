@@ -68,6 +68,16 @@ def db_verify_user(username, password):
     except Exception as e:
         print(e)
         return False
+    
+def db_check_followship(username1, username2):
+    try:
+        cursor = db.session.execute(f"SELECT * FROM followship WHERE username_1 = '{username1}' AND username_2 = '{username2}';")
+        for cur in cursor:
+            return True, True
+        return True, False
+    except Exception as e:
+        print(e)
+        return False, False
 
 
 def db_get_user_info(username):
@@ -125,8 +135,8 @@ def db_get_followers(username):
         cursor = db.session.execute(
             f"""SELECT users.username, users.intro, users.avatar, users.nickname 
                 FROM followship
-                JOIN users ON followship.username_2 = users.username
-                where followship.username_1 = '{username}'
+                JOIN users ON followship.username_1 = users.username
+                where followship.username_2 = '{username}'
                 ;""")
         results = cursor.fetchall()
         followers_list = []
@@ -151,8 +161,8 @@ def db_get_followings(username):
         cursor = db.session.execute(
             f"""SELECT users.username, users.intro, users.avatar, users.nickname 
                 FROM followship
-                JOIN users ON followship.username_1 = users.username
-                where followship.username_2 = '{username}'
+                JOIN users ON followship.username_2 = users.username
+                where followship.username_1 = '{username}'
                 ;""")
         results = cursor.fetchall()
         followings_list = []
@@ -220,6 +230,12 @@ def db_add_new_moment(username, title, content, img_nums, tag, location):
         db.session.commit()
         cursor = db.session.execute(f"SELECT id FROM moment WHERE username = '{username}' AND time = '{create_time}';")
         for cur in cursor:
+            status, res = db_get_followers(username)
+            if not status:
+                return False, res
+            for follower in res:
+                if not db_add_notice(username, follower['username'], cur[0], '3'):
+                    return False, 'add notice failed'
             return True, cur[0]
         return False, "can not find id of the moment"
     except Exception as e:
@@ -287,6 +303,7 @@ def db_get_new_moment(current_user, page):
     try:        
         status, followings_list = db_get_followings(current_user)
         followings_list = [user['username'] for user in followings_list]
+        print("following list: ", followings_list)
         cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
         moments = []
         status, res = db_get_user_blacklist(current_user)
@@ -313,7 +330,6 @@ def db_get_new_moment(current_user, page):
             for _cur in cursor_comment_nums:
                 moment['comment_nums'] = _cur[0]
             moments.append(moment)
-        print(moments)
         return True, moments
     except Exception as e:
         print(str(e))
@@ -705,6 +721,7 @@ def db_get_message(current_user, target_user, base, direction):
         print(str(e))
         return False, str(e)
 
+
 def format_time(_time) -> str:
     if isinstance(_time, str):
         time = parser.parse(_time).strftime('%Y-%-m-%-d %H:%M')
@@ -713,3 +730,28 @@ def format_time(_time) -> str:
     else:
         time = ""
     return time
+
+
+def db_add_notice(sender, receiver, content, _type):
+    try:
+        notice = Notice(sender=sender, receiver=receiver, content=content, _type=_type)
+        db.session.add(notice)
+        db.session.commit()
+        return True
+    except Exception as e:
+        print(str(e))
+        return False
+
+
+def db_get_notice(username):
+    try:
+        cursor = db.session.execute(f"SELECT sender, receiver, content, _type FROM notice WHERE receiver = '{username}';")
+        notices = []
+        for cur in cursor:
+            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3]})
+        db.session.execute(f"DELETE FROM notice WHERE receiver = '{username}';")
+        db.session.commit()
+        return True, notices
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
