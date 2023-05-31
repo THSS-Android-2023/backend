@@ -110,7 +110,7 @@ def create_new_account():
     # 注册新的账号，成功则返回 'success' 及201，否则打印错误信息到后端控制台并返回给前端
     body_data = request.json
     username = body_data['username']
-    if ' ' in username or username == 'default':
+    if ' ' in username or username == 'default' or '%20' in username:
         return 'invalid username', 400
     password = body_data['password']
     # email = body_data['email']
@@ -188,7 +188,11 @@ def api_get_other_user_info(username):
         status, res_2 = db_get_user_blacklist(identify(request.headers.get("Authorization", default=None)))
         if status:
             res['is_blacked'] = username in res_2
-            return jsonify(res), 200
+            status, res_3 = db_get_followings(identify(request.headers.get("Authorization", default=None)))
+            if status:
+                res['is_following'] = username in [u['username'] for u in res_3]
+                print(res)
+                return jsonify(res), 200
         return res_2, 500
     return res, 500
 
@@ -215,7 +219,9 @@ def api_follow_user():
     status, message = db_follow_user(identify(request.headers.get("Authorization", default=None)), body_json['target_username'])
     if status:
         return 'success', 200
+    print(message)
     return message, 500
+
 
 @account_bp.route('/check_followship/', methods=['GET'])
 @swag_from('swagger/checkFollowship.yml')

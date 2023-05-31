@@ -17,7 +17,7 @@ tag_map = {'xyzx': '校园资讯', 'esjy': '二手交易', 'xxky': '学习科研
 @login_required
 def api_publish_a_new_moment():
     tag = request.form.get('tag', '')
-    if tag not in ['校园资讯', '二手交易', '学习科研', '吃喝玩乐']:
+    if tag not in tag_map.keys():
         return 'unsupport tag', 400
     if 'files[]' in request.files:    
         files = request.files.getlist('files[]')
@@ -49,15 +49,16 @@ def api_publish_a_new_moment():
             return str(res), 200
         return res, 500
 
-
-@moment_bp.route('/get_moment/<username>/<page>/', methods=['GET'])
+@moment_bp.route('/get_moment/<username>/', defaults={'base_id': ''}, methods=['GET'])
+@moment_bp.route('/get_moment/<username>/<base_id>/', methods=['GET'])
 @swag_from('swagger/getMoment.yml')
 @login_required
-def api_get_user_moment(username, page):
-    if int(page) < 0:
-        return 'invalid page', 400
-    status, res = db_get_user_moment(identify(request.headers.get("Authorization", default=None)), username, page)
+def api_get_user_moment(username, base_id):
+    if base_id != '' and int(base_id) < 0:
+        return 'invalid base_id', 400
+    status, res = db_get_user_moment(identify(request.headers.get("Authorization", default=None)), username, base_id)
     if status:
+        print(res)
         return jsonify(res), 200
     return res, 500
 
@@ -84,18 +85,19 @@ def api_unstar_moment():
     return message, 500
 
 
-@moment_bp.route('/get_star_moment/<page>/', methods=['GET'])
+@moment_bp.route('/get_star_moment/', defaults={'base_id': ''}, methods=['GET'])
+@moment_bp.route('/get_star_moment/<base_id>/', methods=['GET'])
 @swag_from('swagger/getStarMoment.yml')
 @login_required
-def api_get_star_moment(page):
-    if int(page) < 0:
-        return 'invalid page', 400
-    page = int(page)
+def api_get_star_moment(base_id):
+    if base_id != '' and int(base_id) < 0:
+        return 'invalid base_id', 400
     username = identify(request.headers.get("Authorization", default=None))
     status, res = db_get_user_star_moment_id_list(username)
     if not status:
         return res, 500
-    target_moment_id_list = res[page * 10 : (page + 1) * 10]
+    target_moment_id_list = [moment for moment in res if moment < int(base_id)]
+    target_moment_id_list = target_moment_id_list[:10]
     moments = []
     for moment_id in target_moment_id_list:
         status, res = db_get_moment_by_id(username, moment_id)
@@ -134,74 +136,76 @@ def api_unlike_moment():
     return message, 500
 
 
-@moment_bp.route('/get_new_moment/<page>/', methods=['GET', 'POST'])
+@moment_bp.route('/get_new_moment/', defaults={'base_id': ''}, methods=['GET'])
+@moment_bp.route('/get_new_moment/<base_id>/', methods=['GET'])
 @swag_from('swagger/getNewMoment.yml')
 @login_required
-def api_get_new_moment(page):
-    if int(page) < 0:
-        return 'invalid page', 400
-    status, res = db_get_new_moment(identify(request.headers.get("Authorization", default=None)), page)
+def api_get_new_moment(base_id):
+    if base_id != '' and int(base_id) < 0:
+        return 'invalid base_id', 400
+    status, res = db_get_new_moment(identify(request.headers.get("Authorization", default=None)), base_id)
     if status:
         print(len(res))
         return jsonify(res), 200
     return res, 500
 
 
-@moment_bp.route('/get_followings_moment/<filter>/<page>/', methods=['GET'])
+@moment_bp.route('/get_followings_moment/<filter>/', defaults={'base_id': ''}, methods=['GET'])
+@moment_bp.route('/get_followings_moment/<filter>/<base_id>/', methods=['GET'])
 @swag_from('swagger/getFollowingsMoment.yml')
 @login_required
-def api_get_followings_moment(filter, page):
-    if int(page) < 0:
-        return 'invalid page', 400
+def api_get_followings_moment(filter, base_id):
+    if base_id != '' and int(base_id) < 0:
+        return 'invalid base_id', 400
     if str(filter) not in ['time', 'like', 'comment']:
         return 'invalid filter', 400
-    page = int(page)
     filter = str(filter)
-    status, res = db_get_followings_moment(identify(request.headers.get("Authorization", default=None)), page, filter)
+    status, res = db_get_followings_moment(identify(request.headers.get("Authorization", default=None)), base_id, filter)
     if status:
         return jsonify(res), 200
     return res, 500
 
 
-@moment_bp.route('/get_hot_moment/<page>/', methods=['GET'])
+@moment_bp.route('/get_hot_moment/', defaults={'base_id': ''}, methods=['GET'])
+@moment_bp.route('/get_hot_moment/<base_id>/', methods=['GET'])
 @swag_from('swagger/getHotMoment.yml')
 @login_required
-def api_get_hot_moment(page):
-    if int(page) < 0:
-        return 'invalid page', 400
-    page = int(page)
-    status, res = db_get_hot_moment(identify(request.headers.get("Authorization", default=None)), page)
+def api_get_hot_moment(base_id):
+    if base_id != '' and int(base_id) < 0:
+        return 'invalid base_id', 400
+    status, res = db_get_hot_moment(identify(request.headers.get("Authorization", default=None)), base_id)
     if status:
         return jsonify(res), 200
     print(res)
     return res, 500
 
 
-@moment_bp.route('/get_tag_moment/<tag>/<filter>/<page>/', methods=['GET'])
+@moment_bp.route('/get_tag_moment/<tag>/<filter>/', defaults={'base_id': ''}, methods=['GET'])
+@moment_bp.route('/get_tag_moment/<tag>/<filter>/<base_id>/', methods=['GET'])
 @swag_from('swagger/getTagMoment.yml')
 @login_required
-def api_get_tag_moment(tag, filter, page):
-    if int(page) < 0:
-        return 'invalid page', 400
+def api_get_tag_moment(tag, filter, base_id):
+    if base_id != '' and int(base_id) < 0:
+        return 'invalid base_id', 400
     if str(filter) not in ['time', 'like', 'comment']:
         return 'invalid filter', 400
     if str(tag) not in ['xyzx', 'esjy', 'xxky', 'chwl']:
         return 'unsupport tag', 400
-    tag = tag_map[tag]
-    status, res = db_get_tag_moment(identify(request.headers.get("Authorization", default=None)), page, filter, tag)
+    status, res = db_get_tag_moment(identify(request.headers.get("Authorization", default=None)), base_id, filter, tag)
     if status:
         return jsonify(res), 200
+    print(res)
     return res, 500
 
 
-@moment_bp.route('/search_moment/<key_words>/<page>/', methods=['GET'])
+@moment_bp.route('/search_moment/<key_words>/', defaults={'base_id': ''}, methods=['GET'])
+@moment_bp.route('/search_moment/<key_words>/<base_id>/', methods=['GET'])
 @swag_from('swagger/searchMoment.yml')
 @login_required
-def api_search_moment(key_words, page):
-    if int(page) < 0:
-        return 'invalid page', 400
-    page = int(page)
-    status, res = db_search_moment(identify(request.headers.get("Authorization", default=None)), key_words, page)
+def api_search_moment(key_words, base_id):
+    if base_id != '' and int(base_id) < 0:
+        return 'invalid base_id', 400
+    status, res = db_search_moment(identify(request.headers.get("Authorization", default=None)), key_words, base_id)
     if status:
         return jsonify(res), 200
     return res, 500

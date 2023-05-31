@@ -200,9 +200,9 @@ def db_unblack_user(username_1, username_2):
         status, res = db_get_user_blacklist(username_1)
         if not status:
             return False, res
-        if username_2 in res:
+        if username_2 not in res:
             return False, "the target user has not been blocked"
-        db.session.execute(f"DELETE FROM followship WHERE username_1 = '{username_1}' AND username_2 ='{username_2}';")
+        db.session.execute(f"DELETE FROM blackship WHERE username_1 = '{username_1}' AND username_2 ='{username_2}';")
         db.session.commit()
         return True, "success"
     except Exception as e:
@@ -259,15 +259,14 @@ def db_del_moment(username, moment_id):
 
 
 # 按用户名获取动态
-def db_get_user_moment(current_user, target_user, page):
-    """
-    parameters:
-        page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
-    """
+def db_get_user_moment(current_user, target_user, base_id):
     try:
         status, followings_list = db_get_followings(current_user)
         followings_list = [user['username'] for user in followings_list]
-        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
+        if base_id != '':
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{target_user}' AND id < {base_id} ORDER BY id DESC LIMIT 10;")
+        else:
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10;")
         moments = []
         for cur in cursor:
             moment = {'id': cur[0], 'username': cur[1], 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
@@ -295,16 +294,15 @@ def db_get_user_moment(current_user, target_user, page):
         return False, str(e)
 
 
-def db_get_new_moment(current_user, page):
-    """
-    parameters:
-        page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
-    """
+def db_get_new_moment(current_user, base_id):
     try:        
         status, followings_list = db_get_followings(current_user)
         followings_list = [user['username'] for user in followings_list]
         print("following list: ", followings_list)
-        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment ORDER BY id DESC LIMIT 10 OFFSET {page * 10};")
+        if base_id != '':
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE id < {base_id} ORDER BY id DESC LIMIT 10;")
+        else:
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment ORDER BY id DESC LIMIT 10;")
         moments = []
         status, res = db_get_user_blacklist(current_user)
         if not status:
@@ -449,7 +447,7 @@ def db_unlike_moment(username, moment_id):
         return False, str(e)
 
 
-def db_get_followings_moment(username, page, filter):
+def db_get_followings_moment(username, base_id, filter):
     try:
         
         status, followings_list = db_get_followings(username)
@@ -489,17 +487,18 @@ def db_get_followings_moment(username, page, filter):
             moments = sorted(moments, key=lambda k: k['like_nums'], reverse=True)
         elif filter == 'comment':
             moments = sorted(moments, key=lambda k: k['comment_nums'], reverse=True)
-        return True, moments[page * 10 : (page + 1) * 10]
+        if base_id == '':
+            return True, moments[:10]
+        for index, moment in enumerate(moments):
+            if int(base_id) == moment['id']:
+                return True, moments[index + 1 : index + 11]
+        return False, 'invalid base_id'
     except Exception as e:
         print(str(e))
         return False, str(e)
 
 
-def db_get_hot_moment(current_user, page:int):
-    """
-    parameters:
-        page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
-    """
+def db_get_hot_moment(current_user, base_id):
     try:
         # 计算每个moment的点赞数和评论数
         like_counts = db.session.query(LikeAndStar.moment_id, func.count(LikeAndStar.id).label('count')).filter(LikeAndStar._type == True).group_by(LikeAndStar.moment_id).subquery()
@@ -523,8 +522,18 @@ def db_get_hot_moment(current_user, page:int):
         .subquery()
 
 
-        # 获取按加权计算结果排列的动态列表，并进行分页
-        top_moments = db.session.query(Moment).join(weighted_counts, Moment.id == weighted_counts.c.id).order_by(weighted_counts.c.weighted_count.desc()).offset(page * 10).limit(10).all()
+        # 获取按加权计算结果排列的动态列表
+        top_moments = db.session.query(Moment).join(weighted_counts, Moment.id == weighted_counts.c.id).order_by(weighted_counts.c.weighted_count.desc()).all()
+        if base_id == '':
+            top_moments = top_moments[:10]
+        else:
+            for index, moment in enumerate(top_moments):
+                if int(base_id) == moment['id']:
+                    top_moments = top_moments[index + 1 : index + 11]
+                    base_id = ''
+                    break
+        if base_id != '':
+            return False, 'invalid base_id'
         moments = []
 
         status, res = db_get_user_blacklist(current_user)
@@ -570,11 +579,7 @@ def db_get_hot_moment(current_user, page:int):
         return False, str(e)
 
 
-def db_get_tag_moment(current_user, page, filter, tag):
-    """
-    parameters:
-        page: 按每10条动态开始分页，page从0开始索引，默认从新到旧返回。例如page==1则返回从新到旧的第11-20条动态
-    """
+def db_get_tag_moment(current_user, base_id, filter, tag):
     try:
         status, followings_list = db_get_followings(current_user)
         followings_list = [user['username'] for user in followings_list]
@@ -608,13 +613,18 @@ def db_get_tag_moment(current_user, page, filter, tag):
             moments = sorted(moments, key=lambda k: k['like_nums'], reverse=True)
         elif filter == 'comment':
             moments = sorted(moments, key=lambda k: k['comment_nums'], reverse=True)
-        return True, moments[page * 10 : (page + 1) * 10]
+        if base_id == '':
+            return True, moments[:10]
+        for index, moment in enumerate(moments):
+            if int(base_id) == moment['id']:
+                return True, moments[index + 1 : index + 11]
+        return False, 'invalid base_id'
     except Exception as e:
         print(str(e))
         return False, str(e)
 
 
-def db_search_moment(current_user, key_words, page):
+def db_search_moment(current_user, key_words, base_id):
     try:
         
         status, followings_list = db_get_followings(current_user)
@@ -628,7 +638,17 @@ def db_search_moment(current_user, key_words, page):
                 Moment.content.contains(key_word),
                 Moment.username.contains(key_word)
             )).all()
-        results = results[page * 10 : (page + 1) * 10]
+        if base_id == '':
+            results = results[:10]
+        else:
+            for index, moment in enumerate(results):
+                if int(base_id) == moment['id']:
+                    results = results[index + 1 : index + 11]
+                    base_id = ''
+                    break
+        if base_id != '':
+            return False, 'invalid base_id'
+            
         results = [{k: v for k, v in moment.__dict__.items() if k != '_sa_instance_state'} for moment in results]
         for moment in results:
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment['id']}' AND _type = False;")
@@ -709,9 +729,9 @@ def db_get_message(current_user, target_user, base, direction):
         if base == '':
             cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE username_1 IN ('{current_user}', '{target_user}') ORDER BY id LIMIT 10;")
         elif direction == 'old':
-            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id < '{base}' AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id < {base} AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
         else:
-            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id > '{base}' AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id > {base} AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
         messages = []
         for cur in cursor:
             message = {'id': cur[0], 'sender': cur[1], 'receiver': cur[2], 'content': cur[3], 'time': format_time(cur[4])}
