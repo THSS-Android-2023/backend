@@ -9,7 +9,7 @@ parameters:
     example: 1
 responses:
   200:
-    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'moment_id':..., 'username':..., 'content':..., 'time':...}
+    description: 成功，并返回一个list，每一项是一个json，格式为{'id':..., 'moment_id':..., 'username':..., 'nickname':..., 'content':..., 'time':...}
   401:
     description: 当前处于未登录状态
   500:

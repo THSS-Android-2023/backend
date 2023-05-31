@@ -96,7 +96,7 @@ def api_get_star_moment(base_id):
     status, res = db_get_user_star_moment_id_list(username)
     if not status:
         return res, 500
-    target_moment_id_list = [moment for moment in res if moment < int(base_id)]
+    target_moment_id_list = [moment for moment in res if base_id == '' or moment < int(base_id)]
     target_moment_id_list = target_moment_id_list[:10]
     moments = []
     for moment_id in target_moment_id_list:
