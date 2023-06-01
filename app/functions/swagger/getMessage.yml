@@ -10,13 +10,13 @@ parameters:
   - name: base
     in: url
     type: string
-    required: true
+    required: false
     example: '1'
     description: 基准消息的id，如留空则表示获取最新的10条
   - name: direction
     in: url
     type: string
-    required: true
+    required: false
     example: 'new'
     description: 从基准消息开始向前还是向后查看5条消息，仅支持'new':向后、'old':向前
 responses:

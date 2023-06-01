@@ -22,6 +22,7 @@ def api_send_message():
     return res, 500
 
 
+@chat_bp.route('/get_message/<target_user>/', defaults={'base': '', 'direction': 'new'}, methods=['GET'])
 @chat_bp.route('/get_message/<target_user>/<base>/<direction>/', methods=['GET'])
 @swag_from('swagger/getMessage.yml')
 @login_required

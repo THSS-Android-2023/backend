@@ -14,5 +14,6 @@ notice_bp = Blueprint("notice", __name__)
 def api_get_notice():
     status, res = db_get_notice(identify(request.headers.get("Authorization", default=None)))
     if status:
+        print(res)  
         return jsonify(res), 200
     return res, 500

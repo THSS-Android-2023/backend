@@ -31,7 +31,7 @@ def api_publish_a_new_moment():
             if file.filename == '':
                 return 'No selected file', 400
             filename = secure_filename(file.filename)
-            if filename.split('.')[-1].lower() not in ['jpg', 'png', 'jpeg', 'gif', 'bmp', 'mp4', 'avi', 'webm']:
+            if filename.split('.')[-1].lower() not in ['jpg']:
                 return 'unsupport file type', 400
             
             filename = str(res) + '_' + str(index) + '.'+ filename.split('.')[-1]
@@ -57,6 +57,19 @@ def api_get_user_moment(username, base_id):
     if base_id != '' and int(base_id) < 0:
         return 'invalid base_id', 400
     status, res = db_get_user_moment(identify(request.headers.get("Authorization", default=None)), username, base_id)
+    if status:
+        print(res)
+        return jsonify(res), 200
+    return res, 500
+
+@moment_bp.route('/get_moment_by_id/<base_id>/', methods=['GET'])
+@swag_from('swagger/getMomentById.yml')
+@login_required
+def api_get_user_moment_by_id(base_id):
+    base_id = int(base_id)
+    if base_id < 0:
+        return 'invalid base_id', 400
+    status, res = db_get_moment_by_id(identify(request.headers.get("Authorization", default=None)), base_id)
     if status:
         print(res)
         return jsonify(res), 200

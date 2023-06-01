@@ -6,7 +6,7 @@ parameters:
     name: images
     type: file[]
     required: false
-    description: 图片/视频文件，支持jpg, png, jpeg, gif, bmp, mp4, avi, webm，该字段留空则表示该动态不包含图片/视频。
+    description: 图片文件，仅支持jpg，该字段留空则表示该动态不包含图片。
   - name: title
     in: formData
     type: string

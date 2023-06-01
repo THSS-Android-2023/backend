@@ -1,0 +1,18 @@
+tags:
+- name: Moment
+description: 获取最新的动态，并根据base_id值切割返回指定的10条动态。
+parameters:
+  - name: base_id
+    in: moment_id
+    type: int
+    required: true
+    example: 1
+responses:
+  200:
+    description: 成功，是一个json，格式为{'id':..., 'username':..., 'nickname':..., 'avatar':..., 'is_current_user_follow':True or False, 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'location':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':...}
+  400:
+    description: base_id不合法
+  401:
+    description: 当前处于未登录状态
+  500:
+    description: 失败，并返回错误原因

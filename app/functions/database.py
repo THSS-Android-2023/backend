@@ -784,7 +784,13 @@ def format_time(_time) -> str:
 
 def db_add_notice(sender, receiver, content, _type):
     try:
-        notice = Notice(sender=sender, receiver=receiver, content=content, _type=_type)
+        first_img = ''
+        if _type != '0':
+            cursor = db.session.execute(f"SELECT img_nums FROM moment WHERE id = {content};")
+            for cur in cursor:
+                if str(cur[0]) != '0':
+                    first_img = 'http://129.211.216.10:5001/static/moment_imgs/' + str(content) + '_1.jpg'
+        notice = Notice(sender=sender, receiver=receiver, content=content, _type=_type, has_noticed=False, first_img=first_img, time=datetime.datetime.now())
         db.session.add(notice)
         db.session.commit()
         return True
@@ -795,11 +801,12 @@ def db_add_notice(sender, receiver, content, _type):
 
 def db_get_notice(username):
     try:
-        cursor = db.session.execute(f"SELECT sender, receiver, content, _type FROM notice WHERE receiver = '{username}';")
+        cursor = db.session.execute(f"SELECT sender, receiver, content, _type, has_noticed, first_img, time FROM notice WHERE receiver = '{username}';")
         notices = []
         for cur in cursor:
-            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3]})
-        db.session.execute(f"DELETE FROM notice WHERE receiver = '{username}';")
+            avatar = db.session.execute(f"SELECT avatar FROM users WHERE username = '{cur[0]}';").fetchall()[0][0]
+            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3], 'sender_avatar': avatar, 'has_noticed': cur[4], 'first_img': cur[5], 'time': format_time(cur[6])})
+        db.session.execute(f"UPDATE notice SET has_noticed = True WHERE receiver = '{username}';")
         db.session.commit()
         return True, notices
     except Exception as e:
