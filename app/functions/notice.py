@@ -17,3 +17,14 @@ def api_get_notice():
         print(res)  
         return jsonify(res), 200
     return res, 500
+
+
+@notice_bp.route('/get_notice_system/', methods=['GET'])
+@swag_from('swagger/getNoticeSystem.yml')
+@login_required
+def api_get_notice_system():
+    status, res = db_get_notice_system(identify(request.headers.get("Authorization", default=None)))
+    if status:
+        print(res)  
+        return jsonify(res), 200
+    return res, 500

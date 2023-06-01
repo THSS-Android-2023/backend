@@ -102,6 +102,7 @@ class Notice(db.Model):
     content = db.Column(db.String(200), doc="消息具体内容/点赞帖子id/回复帖子id/发布帖子id")
     _type = db.Column(db.String(2), doc="类型，0-收到私信，1-信息被点赞，2-信息被回复，3-关注的用户发布新信息")
     has_noticed = db.Column(db.Boolean, doc="是否已经被提醒过")
+    has_noticed_system = db.Column(db.Boolean, doc="是否已经被系统提醒过")
     first_img = db.Column(db.String(100), doc="第一张图片url")
 
     time = db.Column(db.DateTime, doc="创建时间")

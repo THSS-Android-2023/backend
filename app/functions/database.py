@@ -640,7 +640,7 @@ def db_get_tag_moment(current_user, base_id, filter, tag):
         if base_id == '':
             return True, moments[:10]
         for index, moment in enumerate(moments):
-            if int(base_id) == moment.id:
+            if int(base_id) == moment['id']:
                 return True, moments[index + 1 : index + 11]
         return False, 'invalid base_id'
     except Exception as e:
@@ -790,7 +790,7 @@ def db_add_notice(sender, receiver, content, _type):
             for cur in cursor:
                 if str(cur[0]) != '0':
                     first_img = 'http://129.211.216.10:5001/static/moment_imgs/' + str(content) + '_1.jpg'
-        notice = Notice(sender=sender, receiver=receiver, content=content, _type=_type, has_noticed=False, first_img=first_img, time=datetime.datetime.now())
+        notice = Notice(sender=sender, receiver=receiver, content=content, _type=_type, has_noticed=False, has_noticed_system=False, first_img=first_img, time=datetime.datetime.now())
         db.session.add(notice)
         db.session.commit()
         return True
@@ -805,8 +805,29 @@ def db_get_notice(username):
         notices = []
         for cur in cursor:
             avatar = db.session.execute(f"SELECT avatar FROM users WHERE username = '{cur[0]}';").fetchall()[0][0]
-            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3], 'sender_avatar': avatar, 'has_noticed': cur[4], 'first_img': cur[5], 'time': format_time(cur[6])})
+            status, res = db_get_nickname(cur[0])
+            if not status:
+                return False, res
+            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3], 'sender_avatar': avatar, 'sender_nickname': res, 'has_noticed': cur[4], 'first_img': cur[5], 'time': format_time(cur[6])})
         db.session.execute(f"UPDATE notice SET has_noticed = True WHERE receiver = '{username}';")
+        db.session.commit()
+        return True, notices
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
+
+def db_get_notice_system(username):
+    try:
+        cursor = db.session.execute(f"SELECT sender, receiver, content, _type, first_img, time FROM notice WHERE receiver = '{username}' AND has_noticed_system = False;")
+        notices = []
+        for cur in cursor:
+            avatar = db.session.execute(f"SELECT avatar FROM users WHERE username = '{cur[0]}';").fetchall()[0][0]
+            status, res = db_get_nickname(cur[0])
+            if not status:
+                return False, res
+            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3], 'sender_avatar': avatar, 'sender_nickname': res, 'first_img': cur[4], 'time': format_time(cur[5])})
+        db.session.execute(f"UPDATE notice SET has_noticed_system = True WHERE receiver = '{username}';")
         db.session.commit()
         return True, notices
     except Exception as e:
