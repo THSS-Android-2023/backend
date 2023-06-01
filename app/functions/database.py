@@ -757,11 +757,11 @@ def db_add_new_message(current_user, target_user, content):
 def db_get_message(current_user, target_user, base, direction):
     try:
         if base == '':
-            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE username_1 IN ('{current_user}', '{target_user}') ORDER BY id LIMIT 10;")
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE (username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}') ORDER BY id LIMIT 10;")
         elif direction == 'old':
-            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id < {base} AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id < {base} AND ((username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}')) ORDER BY id LIMIT 5;")
         else:
-            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id > {base} AND (username_1 IN ('{current_user}', '{target_user}')) ORDER BY id LIMIT 5;")
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id > {base} AND ((username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}')) ORDER BY id LIMIT 5;")
         messages = []
         for cur in cursor:
             message = {'id': cur[0], 'sender': cur[1], 'receiver': cur[2], 'content': cur[3], 'time': format_time(cur[4])}

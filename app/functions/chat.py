@@ -27,7 +27,7 @@ def api_send_message():
 @swag_from('swagger/getMessage.yml')
 @login_required
 def api_get_message(target_user, base, direction):
-    if int(base) < 0:
+    if base != '' and int(base) < 0:
         return 'invalid base', 400
     if str(direction) not in ['new', 'old']:
         return 'invalid direction', 400
