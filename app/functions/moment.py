@@ -1,4 +1,5 @@
 import os
+from PIL import Image
 
 from flask import Blueprint, request, jsonify
 from flasgger import swag_from
@@ -18,36 +19,63 @@ tag_map = {'xyzx': '校园资讯', 'esjy': '二手交易', 'xxky': '学习科研
 def api_publish_a_new_moment():
     tag = request.form.get('tag', '')
     if tag not in tag_map.keys():
+        print('tag')
         return 'unsupport tag', 400
     if 'files[]' in request.files:    
         files = request.files.getlist('files[]')
         img_nums = len(files)
-        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), img_nums, tag, request.form.get('location', ''))
-        if not status:
-            return res, 500
         index = 0
         for file in files:
             index = index + 1
             if file.filename == '':
+                print('No selected file')
                 return 'No selected file', 400
             filename = secure_filename(file.filename)
-            if filename.split('.')[-1].lower() not in ['jpg']:
+            file_ext = filename.split('.')[-1].lower()
+
+            if file_ext not in ['jpg', 'png', 'mp4']:
+                print('unsupport file type')
                 return 'unsupport file type', 400
-            
-            filename = str(res) + '_' + str(index) + '.'+ filename.split('.')[-1]
-    
-            directory = '~/djk/backend/app/static/moment_imgs/'
-            directory = os.path.expanduser(directory)
-            os.makedirs(directory, exist_ok=True)
-            filepath = os.path.join(directory, filename)
-            file.save(filepath)
-        return str(res), 200
+            if file_ext == 'mp4':
+                status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), 0, tag, request.form.get('location', ''), 1)
+                if not status:
+                    return res, 500
+                filename = str(res) + '_1.mp4'
+                directory = '~/djk/backend/app/static/moment_imgs/'
+                directory = os.path.expanduser(directory)
+                os.makedirs(directory, exist_ok=True)
+                filepath = os.path.join(directory, filename)
+                file.save(filepath)
+            else:
+                status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), img_nums, tag, request.form.get('location', ''), 0)
+                if not status:
+                    return res, 500
+                
+                filename = str(res) + '_' + str(index) + '.' + file_ext
+
+                # 将PNG转换为JPG
+                if file_ext == 'png':
+                    img = Image.open(file)
+                    jpg_filename = filename.rsplit('.', 1)[0] + '.jpg'
+                    img = img.convert('RGB')
+                    save_directory = os.path.expanduser('~/djk/backend/app/static/moment_imgs/')
+                    save_path = os.path.join(save_directory, jpg_filename)
+                    img.save(save_path, 'JPEG')
+                    continue
+        
+                directory = '~/djk/backend/app/static/moment_imgs/'
+                directory = os.path.expanduser(directory)
+                os.makedirs(directory, exist_ok=True)
+                filepath = os.path.join(directory, filename)
+                file.save(filepath)
+            return str(res), 200
     else:
         print("No img")
-        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), 0, tag, request.form.get('location', ''))
+        status, res = db_add_new_moment(identify(request.headers.get("Authorization", default=None)), request.form.get('title', ''), request.form.get('content', ''), 0, tag, request.form.get('location', ''), 0)
         if status:
             return str(res), 200
         return res, 500
+
 
 @moment_bp.route('/get_moment/<username>/', defaults={'base_id': ''}, methods=['GET'])
 @moment_bp.route('/get_moment/<username>/<base_id>/', methods=['GET'])

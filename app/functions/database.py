@@ -229,10 +229,10 @@ def db_get_user_blacklist(username):
         return False, str(e)
     
 
-def db_add_new_moment(username, title, content, img_nums, tag, location):
+def db_add_new_moment(username, title, content, img_nums, tag, location, _type):
     try:
         create_time = datetime.datetime.now()
-        moment = Moment(username=username, title=title, content=content, img_nums=img_nums, time=create_time, tag=tag, location=location)
+        moment = Moment(username=username, title=title, content=content, img_nums=img_nums, time=create_time, tag=tag, location=location, _type=_type)
         db.session.add(moment)
         db.session.commit()
         cursor = db.session.execute(f"SELECT id FROM moment WHERE username = '{username}' AND time = '{create_time}';")
@@ -271,15 +271,19 @@ def db_get_user_moment(current_user, target_user, base_id):
         status, followings_list = db_get_followings(current_user)
         followings_list = [user['username'] for user in followings_list]
         if base_id != '':
-            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{target_user}' AND id < {base_id} ORDER BY id DESC LIMIT 10;")
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, _type, time FROM moment WHERE username = '{target_user}' AND id < {base_id} ORDER BY id DESC LIMIT 10;")
         else:
-            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10;")
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, _type, time FROM moment WHERE username = '{target_user}' ORDER BY id DESC LIMIT 10;")
         moments = []
         status, res = db_get_nickname(target_user)
         if not status:
             return False, res
         for cur in cursor:
-            moment = {'id': cur[0], 'username': cur[1], 'nickname': res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
+            if str(cur[7]) == '0':
+                mp4url = ''
+            else:
+                mp4url = 'http://129.211.216.10:5001/static/moment_imgs/' + str(cur[0]) + '_1.mp4'
+            moment = {'id': cur[0], 'username': cur[1], 'nickname': res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'mp4url': mp4url, 'time': format_time(cur[8])}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = current_user in star_user_list
@@ -310,9 +314,9 @@ def db_get_new_moment(current_user, base_id):
         followings_list = [user['username'] for user in followings_list]
         print("following list: ", followings_list)
         if base_id != '':
-            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE id < {base_id} ORDER BY id DESC LIMIT 10;")
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time, _type FROM moment WHERE id < {base_id} ORDER BY id DESC LIMIT 10;")
         else:
-            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment ORDER BY id DESC LIMIT 10;")
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time, _type FROM moment ORDER BY id DESC LIMIT 10;")
         moments = []
         status, res = db_get_user_blacklist(current_user)
         if not status:
@@ -323,7 +327,11 @@ def db_get_new_moment(current_user, base_id):
             status, _res = db_get_nickname(cur[1])
             if not status:
                 return False, _res
-            moment = {'id': cur[0], 'username': cur[1], 'nickname': _res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
+            if str(cur[8]) == '0':
+                mp4url = ''
+            else:
+                mp4url = 'http://129.211.216.10:5001/static/moment_imgs/' + str(cur[0]) + '_1.mp4'
+            moment = {'id': cur[0], 'username': cur[1], 'nickname': _res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7]), 'mp4url': mp4url}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             moment['avatar'] = db.session.execute(f"SELECT avatar FROM users WHERE username = '{moment['username']}';").fetchall()[0][0]
             star_user_list = [row[0] for row in cursor_star.fetchall()]
@@ -361,13 +369,17 @@ def db_get_moment_by_id(username, moment_id):
     try:
         status, followings_list = db_get_followings(username)
         followings_list = [user['username'] for user in followings_list]
-        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE id = '{moment_id}';")
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time, _type FROM moment WHERE id = '{moment_id}';")
         moment = {}
         for cur in cursor:
             status, _res = db_get_nickname(cur[1])
             if not status:
                 return False, _res
-            moment = {'id': cur[0], 'username': cur[1], 'nickname': _res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
+            if str(cur[8]) == '0':
+                mp4url = ''
+            else:
+                mp4url = 'http://129.211.216.10:5001/static/moment_imgs/' + str(cur[0]) + '_1.mp4'
+            moment = {'id': cur[0], 'username': cur[1], 'nickname': _res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7]), 'mp4url': mp4url}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = username in star_user_list
@@ -480,9 +492,13 @@ def db_get_followings_moment(username, base_id, filter):
             status, __res = db_get_nickname(following['username'])
             if not status:
                 return False, __res
-            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE username = '{following['username']}' ORDER BY id DESC;")
+            cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time, _type FROM moment WHERE username = '{following['username']}' ORDER BY id DESC;")
             for cur in cursor:
-                moment = {'id': cur[0], 'username': cur[1], 'nickname': __res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
+                if str(cur[8]) == '0':
+                    mp4url = ''
+                else:
+                    mp4url = 'http://129.211.216.10:5001/static/moment_imgs/' + str(cur[0]) + '_1.mp4'
+                moment = {'id': cur[0], 'username': cur[1], 'nickname': __res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7]), 'mp4url': mp4url}
                 cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
                 star_user_list = [row[0] for row in cursor_star.fetchall()]
                 moment['is_current_user_star'] = username in star_user_list
@@ -604,7 +620,7 @@ def db_get_tag_moment(current_user, base_id, filter, tag):
     try:
         status, followings_list = db_get_followings(current_user)
         followings_list = [user['username'] for user in followings_list]
-        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time FROM moment WHERE tag = '{tag}' ORDER BY id DESC;")
+        cursor = db.session.execute(f"SELECT id, username, title, content, img_nums, tag, location, time, _type FROM moment WHERE tag = '{tag}' ORDER BY id DESC;")
         moments = []
         status, res = db_get_user_blacklist(current_user)
         if not status:
@@ -615,7 +631,11 @@ def db_get_tag_moment(current_user, base_id, filter, tag):
             status, _res = db_get_nickname(cur[1])
             if not status:
                 return False, _res
-            moment = {'id': cur[0], 'username': cur[1], 'nickname': _res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7])}
+            if str(cur[8]) == '0':
+                mp4url = ''
+            else:
+                mp4url = 'http://129.211.216.10:5001/static/moment_imgs/' + str(cur[0]) + '_1.mp4'
+            moment = {'id': cur[0], 'username': cur[1], 'nickname': _res, 'title': cur[2], 'content': cur[3], 'img_nums': cur[4], 'tag': cur[5], 'location':cur[6], 'time': format_time(cur[7]), 'mp4url': mp4url}
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{cur[0]}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = current_user in star_user_list

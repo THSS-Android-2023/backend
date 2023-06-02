@@ -9,7 +9,7 @@ parameters:
     example: 1
 responses:
   200:
-    description: 成功，是一个json，格式为{'id':..., 'username':..., 'nickname':..., 'avatar':..., 'is_current_user_follow':True or False, 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'location':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':...}
+    description: 成功，是一个json，格式为{'id':..., 'username':..., 'nickname':..., 'avatar':..., 'is_current_user_follow':True or False, 'title':..., 'content':..., 'img_nums':..., 'tag':..., 'location':..., 'time':..., 'is_current_user_star':True or False, 'star_nums':...,'is_current_user_like':True or False, 'like_nums':..., 'comment_nums':... , 'mp4url':...}
   400:
     description: base_id不合法
   401:
