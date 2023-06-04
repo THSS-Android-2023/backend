@@ -7,14 +7,12 @@ from app.functions.account import login_required, identify
 
 notice_bp = Blueprint("notice", __name__)
 
-
 @notice_bp.route('/get_notice/', methods=['GET'])
 @swag_from('swagger/getNotice.yml')
 @login_required
 def api_get_notice():
     status, res = db_get_notice(identify(request.headers.get("Authorization", default=None)))
     if status:
-        print(res)  
         return jsonify(res), 200
     return res, 500
 
@@ -24,7 +22,6 @@ def api_get_notice():
 @login_required
 def api_get_notice_system():
     status, res = db_get_notice_system(identify(request.headers.get("Authorization", default=None)))
-    if status:
-        print(res)  
+    if status: 
         return jsonify(res), 200
     return res, 500

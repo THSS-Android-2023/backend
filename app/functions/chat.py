@@ -35,3 +35,12 @@ def api_get_message(target_user, base, direction):
     if status:
         return jsonify(res), 200
     return res, 500
+
+@chat_bp.route('/get_chatter/', methods=['GET'])
+@swag_from('swagger/getChatter.yml')
+@login_required
+def api_get_chatter():
+    status, res = db_get_chatter(identify(request.headers.get("Authorization", default=None)))
+    if status:
+        return jsonify(res), 200
+    return res, 500

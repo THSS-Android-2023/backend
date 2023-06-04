@@ -762,6 +762,30 @@ def db_del_comment(username, comment_id):
         print(str(e))
         return False, str(e)
 
+def db_get_chatter(user):
+    try:
+        cursor = db.session.execute(f"SELECT username_1, username_2 FROM message WHERE username_1 = '{user}' OR username_2 = '{user}';")
+        # get last message
+        
+        res_list = []
+        chatter_list = []
+        for cur in cursor:
+            if cur[0] == user:
+                cur_user = cur[1]
+            else:
+                cur_user = cur[0]
+            if cur_user in chatter_list:
+                continue
+            chatter_list.append(cur_user)
+            cursor1 = db.session.execute(f"SELECT username_1, username_2, content, time FROM message WHERE (username_1 = '{cur_user}' AND username_2 = '{user}') OR (username_2 = '{cur_user}' AND username_1 = '{user}') ORDER BY id DESC;")
+            res_list.append({'username': cur_user, 'avatar': db.session.execute(f"SELECT avatar FROM users WHERE username = '{cur_user}';").fetchall()[0][0], 'last_message': cursor1.fetchall()[0][2]})
+        # chatter_list = list(set(chatter_list))
+        print(res_list)
+        return True, res_list
+    except Exception as e:
+        print(str(e))
+        return False, str(e)
+
 
 def db_add_new_message(current_user, target_user, content):
     try:
@@ -777,15 +801,20 @@ def db_add_new_message(current_user, target_user, content):
 def db_get_message(current_user, target_user, base, direction):
     try:
         if base == '':
-            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE (username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}') ORDER BY id LIMIT 10;")
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE (username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}') ORDER BY id DESC LIMIT 10;")
         elif direction == 'old':
-            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id < {base} AND ((username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}')) ORDER BY id LIMIT 5;")
+            cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id < {base} AND ((username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}')) ORDER BY id DESC LIMIT 5;")
         else:
             cursor = db.session.execute(f"SELECT id, username_1, username_2, content, time FROM message WHERE id > {base} AND ((username_1 = '{current_user}' AND username_2 = '{target_user}') OR (username_2 = '{current_user}' AND username_1 = '{target_user}')) ORDER BY id LIMIT 5;")
         messages = []
+        avatar_dict = { current_user: db_get_user_info(current_user)[1]['avatar'], target_user: db_get_user_info(target_user)[1]['avatar']}
+        
         for cur in cursor:
-            message = {'id': cur[0], 'sender': cur[1], 'receiver': cur[2], 'content': cur[3], 'time': format_time(cur[4])}
+            message = {'id': cur[0], 'sender': cur[1], 'receiver': cur[2], 'content': cur[3], 'time': format_time(cur[4]), 'avatar': avatar_dict[cur[1]]}
             messages.append(message)
+        if base == '' or direction == 'old':
+            messages.reverse()
+        print(len(messages))
         return True, messages
     except Exception as e:
         print(str(e))
