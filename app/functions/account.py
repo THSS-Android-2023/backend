@@ -100,7 +100,10 @@ def login():
     username = body_data['username']
     password = body_data['password']
     if db_verify_user(username, password):
-        return jsonify({'jwt': generate_access_token(username)}), 200
+        status, res = db_get_user_info(username)
+        if status:
+            return jsonify({'jwt': generate_access_token(username), 'nickname': res['nickname']}), 200
+        return res, 500
     return 'failed', 401
 
 
@@ -272,6 +275,7 @@ def api_black_user():
     if status:
         return 'success', 200
     return message, 500
+
 
 
 @account_bp.route('/unblack_user/', methods=['POST'])

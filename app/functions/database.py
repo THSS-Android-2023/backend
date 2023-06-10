@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 
 from app.models.models import *
 from app.extensions.extensions import db
@@ -86,10 +86,12 @@ def db_get_user_info(username):
         status, res = db_get_followings(username)
         if not status:
             return False, "get followings error"
+        print("followings", res)
         followings_num = len(res)
         status, res = db_get_followers(username)
         if not status:
             return False, "get followers error"
+        print("followers", res)
         followers_num = len(res)
         cursor = db.session.execute(f"SELECT intro, avatar, nickname FROM users WHERE username = '{username}';")
         for cur in cursor:
@@ -110,6 +112,7 @@ def db_follow_user(username_1, username_2):
         followship = Followship(username_1=username_1, username_2=username_2)
         db.session.add(followship)
         db.session.commit()
+        print(username_1, username_2)
         return True, "success"
     except Exception as e:
         print(str(e))
@@ -141,7 +144,8 @@ def db_get_followers(username):
                 ;""")
         results = cursor.fetchall()
         followers_list = []
-        followings_list = db_get_followings(username)
+        followings_list = db_get_followings(username)[1]
+        followings_list = [user['username'] for user in followings_list]
         for result in results:
             followers_list.append({
                 'username': result[0],
@@ -548,9 +552,9 @@ def db_get_hot_moment(current_user, base_id):
 
         weighted_counts = db.session.query(
             Moment.id.label('id'), 
-            ((like_counts.c.count * 0.5 + comment_counts.c.count * 0.5) / (time_difference.c.timediff + 1)).label('weighted_count')
-         ).join(like_counts, Moment.id == like_counts.c.moment_id)    \
-        .join(comment_counts, Moment.id == comment_counts.c.moment_id)  \
+            (((like_counts.c.count * 0.5 + comment_counts.c.count * 0.5) / (time_difference.c.timediff + 1))).label('weighted_count')
+         ).outerjoin(like_counts, Moment.id == like_counts.c.moment_id)    \
+        .outerjoin(comment_counts, Moment.id == comment_counts.c.moment_id)  \
         .join(time_difference, Moment.id == time_difference.c.id)   \
         .subquery()
 
@@ -593,6 +597,11 @@ def db_get_hot_moment(current_user, base_id):
                 'location': moment.location,
                 'time': format_time(moment.time),
             }
+            
+            if str(moment._type) == '0':
+                moment_dict['mp4url'] = ''
+            else:
+                moment_dict['mp4url'] = 'http://129.211.216.10:5001/static/moment_imgs/' + str(moment.id) + '_1.mp4'
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment.id}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment_dict['is_current_user_star'] = current_user in star_user_list
@@ -673,17 +682,23 @@ def db_search_moment(current_user, key_words, base_id):
         
         status, followings_list = db_get_followings(current_user)
         followings_list = [user['username'] for user in followings_list]
-        key_words = key_words.split('%20')
-        results = []
-        for key_word in key_words:
-            results = results + Moment.query.filter(or_(
-                Moment.title.contains(key_word),
-                Moment.tag.contains(key_word),
-                Moment.content.contains(key_word),
-                Moment.username.contains(key_word)
-            )).all()
+        key_words = key_words.split(' ')
+        #results = []
+        #for key_word in key_words:
+        #    results = results + Moment.query.filter(or_(
+        #        Moment.title.contains(key_word),
+        #        Moment.tag.contains(key_word),
+        #        Moment.content.contains(key_word),
+        #        Moment.username.contains(key_word)
+        #    )).all()
+        conditions = [or_(Moment.username.ilike(f'%{keyword}%'), Moment.title.ilike(f'%{keyword}%'), Moment.content.ilike(f'%{keyword}%'), Moment.tag.ilike(f'%{keyword}%')) for keyword in key_words]
+        combined_condition = and_(*conditions)
+        query = db.session.query(Moment).filter(combined_condition)
+        results = query.all()
+        results = sorted(results, key=lambda k: k.id, reverse=True)
+        print(results)
         if base_id == '':
-            results = results[:10]
+            results = results
         else:
             for index, moment in enumerate(results):
                 if int(base_id) == moment.id:
@@ -699,6 +714,11 @@ def db_search_moment(current_user, key_words, base_id):
             if not status:
                 return False, _res
             moment['nickname'] = _res
+            if str(moment['_type']) == '0':
+                mp4url = ''
+            else:
+                mp4url = 'http://129.211.216.10:5001/static/moment_imgs/' + str(moment['id']) + '_1.mp4'
+            moment['mp4url'] = mp4url
             cursor_star = db.session.execute(f"SELECT username FROM like_and_star WHERE moment_id = '{moment['id']}' AND _type = False;")
             star_user_list = [row[0] for row in cursor_star.fetchall()]
             moment['is_current_user_star'] = current_user in star_user_list
@@ -789,6 +809,7 @@ def db_get_chatter(user):
 
 def db_add_new_message(current_user, target_user, content):
     try:
+        print("sender", current_user, "receiver", target_user, content)
         message = Message(username_1=current_user, username_2=target_user, content=content, time=datetime.datetime.now())
         db.session.add(message)
         db.session.commit()
@@ -875,7 +896,7 @@ def db_get_notice_system(username):
             status, res = db_get_nickname(cur[0])
             if not status:
                 return False, res
-            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3], 'sender_avatar': avatar, 'sender_nickname': res, 'first_img': cur[4], 'time': format_time(cur[5])})
+            notices.append({'sender': cur[0], 'receiver': cur[1], 'content': cur[2], '_type': cur[3], 'sender_avatar': avatar, 'sender_nickname': res, 'first_img': cur[4], 'time': format_time(cur[5]), "has_noticed": 0})
         db.session.execute(f"UPDATE notice SET has_noticed_system = True WHERE receiver = '{username}';")
         db.session.commit()
         return True, notices

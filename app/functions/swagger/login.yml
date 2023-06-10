@@ -14,6 +14,6 @@ parameters:
     example: 'woshilihua'
 responses:
   200:
-    description: 成功，并返回一个json，格式为{'jwt':...}，其中...为具体的jwtToken值
+    description: 成功，并返回一个json，格式为{'jwt':..., 'nickname':...}，其中...为具体的jwtToken值
   401:
     description: 身份验证失败

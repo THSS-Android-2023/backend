@@ -24,9 +24,9 @@ def api_publish_a_new_moment():
     if 'files[]' in request.files:    
         files = request.files.getlist('files[]')
         img_nums = len(files)
+        print(files)
         index = 0
         for file in files:
-            index = index + 1
             if file.filename == '':
                 print('No selected file')
                 return 'No selected file', 400
@@ -51,23 +51,34 @@ def api_publish_a_new_moment():
                 if not status:
                     return res, 500
                 
-                filename = str(res) + '_' + str(index) + '.' + file_ext
+                for file in files:
+                    index = index + 1
+                    if file.filename == '':
+                        print('No selected file')
+                        return 'No selected file', 400
+                    filename = secure_filename(file.filename)
+                    file_ext = filename.split('.')[-1].lower()
 
-                # 将PNG转换为JPG
-                if file_ext == 'png':
-                    img = Image.open(file)
-                    jpg_filename = filename.rsplit('.', 1)[0] + '.jpg'
-                    img = img.convert('RGB')
-                    save_directory = os.path.expanduser('~/djk/backend/app/static/moment_imgs/')
-                    save_path = os.path.join(save_directory, jpg_filename)
-                    img.save(save_path, 'JPEG')
-                    continue
-        
-                directory = '~/djk/backend/app/static/moment_imgs/'
-                directory = os.path.expanduser(directory)
-                os.makedirs(directory, exist_ok=True)
-                filepath = os.path.join(directory, filename)
-                file.save(filepath)
+                    if file_ext not in ['jpg', 'png']:
+                        print('unsupport file type')
+                        return 'unsupport file type', 400
+                    filename = str(res) + '_' + str(index) + '.' + file_ext
+
+                    # 将PNG转换为JPG
+                    if file_ext == 'png':
+                        img = Image.open(file)
+                        jpg_filename = filename.rsplit('.', 1)[0] + '.jpg'
+                        img = img.convert('RGB')
+                        save_directory = os.path.expanduser('~/djk/backend/app/static/moment_imgs/')
+                        save_path = os.path.join(save_directory, jpg_filename)
+                        img.save(save_path, 'JPEG')
+                        continue
+            
+                    directory = '~/djk/backend/app/static/moment_imgs/'
+                    directory = os.path.expanduser(directory)
+                    os.makedirs(directory, exist_ok=True)
+                    filepath = os.path.join(directory, filename)
+                    file.save(filepath)
             return str(res), 200
     else:
         print("No img")
@@ -145,6 +156,7 @@ def api_get_star_moment(base_id):
         if not status:
             return res, 500
         moments.append(res)
+    print(moments)
     return jsonify(moments), 200
 
 
@@ -186,7 +198,6 @@ def api_get_new_moment(base_id):
         return 'invalid base_id', 400
     status, res = db_get_new_moment(identify(request.headers.get("Authorization", default=None)), base_id)
     if status:
-        print(len(res))
         return jsonify(res), 200
     return res, 500
 
@@ -206,7 +217,6 @@ def api_get_followings_moment(filter, base_id):
         return jsonify(res), 200
     return res, 500
 
-
 @moment_bp.route('/get_hot_moment/', defaults={'base_id': ''}, methods=['GET'])
 @moment_bp.route('/get_hot_moment/<base_id>/', methods=['GET'])
 @swag_from('swagger/getHotMoment.yml')
@@ -219,7 +229,6 @@ def api_get_hot_moment(base_id):
         return jsonify(res), 200
     print(res)
     return res, 500
-
 
 @moment_bp.route('/get_tag_moment/<tag>/<filter>/', defaults={'base_id': ''}, methods=['GET'])
 @moment_bp.route('/get_tag_moment/<tag>/<filter>/<base_id>/', methods=['GET'])
@@ -249,6 +258,7 @@ def api_search_moment(key_words, base_id):
     status, res = db_search_moment(identify(request.headers.get("Authorization", default=None)), key_words, base_id)
     if status:
         return jsonify(res), 200
+    print(res)
     return res, 500
 
 
